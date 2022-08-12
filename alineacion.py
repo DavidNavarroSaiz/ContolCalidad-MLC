@@ -21,11 +21,11 @@ class Alineacion():
         c = contours[1]
         x,y,w,h = cv2.boundingRect(c)
         cv2.rectangle(mask, (x, y), (x + w, y + h), (0,0,255), 1)
-        cv2.imshow("final difference",mask)
-        cv2.waitKey()
+        # cv2.imshow("final difference",mask)
+        # cv2.waitKey()
         return h
     def find_alignment(self):
-        self.height11 = self.find_height(self.img,150,150,20,130)
+        self.height11 = self.find_height(self.img,150,150,20,130) #TODO: ROI Relativa 
         self.height12 = self.find_height(self.img,520,150,20,130)
         self.height21 = self.find_height(self.img,485,750,20,130)
         self.height22 = self.find_height(self.img,836,750,20,130)
