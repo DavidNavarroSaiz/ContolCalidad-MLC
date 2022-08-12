@@ -7,7 +7,8 @@ class CompareImages():
     def __init__(self,pathA, pathB):
         self.imageA = cv2.imread(pathA)[:,:,0]
         self.imageB = cv2.imread(pathB)[:,:,0]
-
+        # cv2.imshow("imageA",self.imageA)
+        # cv2.waitKey()
     def dist_manhattan(self,imgA,imgB):
             """        
             dist_manhattan = sum(abs(i1 - i2)) / i1.size
