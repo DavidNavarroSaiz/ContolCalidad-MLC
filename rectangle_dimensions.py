@@ -8,6 +8,7 @@ class RectangleDimensions():
         self.img_raw = cv2.imread(path)
         self.img = self.img_raw[:,:,0]
         self.imgRoi = self.img[480:542,480:542]
+
     def find_min_level(self):
         average = np.average(self.imgRoi, axis=0)
         self.average = np.average(average, axis=0)
@@ -24,21 +25,26 @@ class RectangleDimensions():
     def evaluate_dimensions(self,mm_px):
         #  self.mm_px = 0.2631
         x,y,w,h = cv2.boundingRect(self.c)
-        print(w)
+        # print(w)
         cv2.rectangle(self.img_raw, (x, y), (x + w, y + h), (0,0,255), 1)
-       
+        
         self.w_mm = w*mm_px
         self.h_mm = h*mm_px
-        print(f"width {self.w_mm} mm")
-        print(f"height {self.h_mm} mm")
+        # print(f"width {self.w_mm} mm")
+        # print(f"height {self.h_mm} mm")
         cv2.imshow("final difference",self.img_raw)
         cv2.waitKey()
         cv2.destroyAllWindows()
 
+    def evaluate_relation(self, w_size):
+        _,_,w,h = cv2.boundingRect(self.c)
+        self.relation_mmpx = w_size/w
+        # print(w)        
+        # print(f"Relation = {self.relation_mmpx} mm/px")
 
-    def evaluate_image(self,mmpx):
+    def evaluate_image(self,mmpx, w_size):
         self.find_min_level()
         self.find_contour()
         self.evaluate_dimensions(mmpx)
-        
+        self.evaluate_relation(w_size)
 

@@ -15,7 +15,7 @@ class Picket():
     def __init__(self,path):
         self.img_raw = cv2.imread(path)
         self.ROI_img = self.img_raw[50:950, 20:1000]
-        self.gray_img = cv2.cvtColor(self.ROI_img, cv2.COLOR_BGR2GRAY) 
+        self.gray_img = cv2.cvtColor(self.ROI_img, cv2.COLOR_BGR2GRAY)  
 
     '''
     Se buscan los valores de interes para aplicar thesholds
