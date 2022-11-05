@@ -2,7 +2,8 @@ from itertools import count
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-class Alineacion():
+
+class AlineacionYCuadratura():
 
     def __init__(self,path):
         self.img_raw = cv2.imread(path)
@@ -50,9 +51,9 @@ class Alineacion():
         contours, _ = cv2.findContours(image=mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
         c = contours[1]
         x,y,w,h = cv2.boundingRect(c)
-        cv2.rectangle(mask, (x, y), (x + w, y + h), (0,0,255), 1)
-        cv2.imshow("final difference",mask)
-        cv2.waitKey()
+        # cv2.rectangle(mask, (x, y), (x + w, y + h), (0,0,255), 1)
+        # cv2.imshow("final difference",mask)
+        # cv2.waitKey()
         return h
 
     def find_alignment(self):
@@ -70,12 +71,14 @@ class Alineacion():
         return diff_heights
 
 
-    def evaluate_error(self,mm_px, tolerance_mm):
+    def alineacion(self, mm_px, tolerance_mm):
         diff_heights = self.find_alignment()
-        print("Tolerance [mm] =", tolerance_mm) 
+        print("Tolerancia Alineaión [mm] =", tolerance_mm) 
+        print("Valores: ")
 
         error = 0
         for i in diff_heights:
+            print(i*mm_px)
             if i*mm_px > tolerance_mm:
                 error = 1
 
@@ -84,9 +87,10 @@ class Alineacion():
         else:
             mensaje = "Alineacion correcta."
 
-        return mensaje
+        print(mensaje)        
 
-    def field_size(self, tolerance):
+    def cuadratura(self, mm_px, tolerance_mm):
+        print("Tolerancia Cuadratura [mm] =", tolerance_mm) 
         # white_zones_angle son las regiones blancas correspondientes a las placas
         # reference_edge corresponde al borde inferior de la imagen para referencia
         _, white_zones_angle = self.find_white_zones_parameters(0.12, 0.88, 0.12, 0.88)
@@ -97,12 +101,15 @@ class Alineacion():
         if len(reference_edge) == 1:
             reference_edge = reference_edge[0]
         else:
+            print("No se encuentra borde inferior")
             error = 1
 
         # Verificar paralelismo entre zonas blanca y borde inferior
+        print("Valores: ")
         for zone_angle in white_zones_angle:
             diff = abs(zone_angle - reference_edge)
-            if diff >= tolerance:
+            print(diff*mm_px)
+            if diff*mm_px >= tolerance_mm:
                 error = 1
 
         if error == 1:
@@ -110,4 +117,4 @@ class Alineacion():
         else:
             mensaje = "Paralelismo correcto."
 
-        return mensaje
+        print(mensaje)

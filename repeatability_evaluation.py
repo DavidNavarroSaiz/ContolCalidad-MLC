@@ -1,4 +1,4 @@
-from compare_images import CompareImages
+from repeatability import CompareImages
 
 
 # image_1_path = './compareimages/PicketFenceY2.tiff'
