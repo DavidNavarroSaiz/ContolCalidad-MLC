@@ -1,10 +1,14 @@
-<html>
-    <head>
-        <title>Dashboard </title>
-    </head>
-    <body>
-        <h1 style = "color:blue "> Admin Dashboard</h1>
+{% extends "admin/templates/admin_template.html" %}
 
-        <p>this is a dashboard</p>
-    </body>
-</html>
+{% block title %}Admin dashboard {% endblock %}
+
+
+{%block main %}
+
+<div class="contai">
+    <div class="col">
+        <h1>Admin dashboard</h1>
+    </div>
+</div>
+
+{% endblock main %}
