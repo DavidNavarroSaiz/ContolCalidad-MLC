@@ -9,11 +9,36 @@ class Spoke():
     def __init__(self,path):
         self.img_raw = cv2.imread(path)
         self.img = self.img_raw[:,:,0]
+        self.imgray = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
+        self.h_imgray, self.w_imgray = self.imgray.shape
 
-    def find_regions(self, y1_percentage, y2_percentage, x1_percentage, x2_percentage, min_thresh, max_thresh):
-        imgray = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
-        w_imgray, h_imgray = imgray.shape
-        imgray = imgray[int(h_imgray*y1_percentage) : int(h_imgray*y2_percentage), int(w_imgray*x1_percentage) : int(w_imgray*x2_percentage)]
+    def find_white_circle(self, min_thresh, max_thresh):
+        imgray = self.imgray[int(self.h_imgray*0.4) : int(self.h_imgray*0.6), int(self.w_imgray*0.4) : int(self.w_imgray*0.6)]
+        _, thresh = cv2.threshold(imgray, min_thresh, max_thresh, cv2.THRESH_BINARY_INV)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        # cv2.drawContours(self.img_raw, contours, -1, (0,255,0), 3)
+
+        area_cte = 0
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area_cte == 0 or area < area_cte:
+                area_cte = area
+                M = cv2.moments(cnt)
+                if M['m00'] != 0:
+                    cx = int(M['m10']/M['m00']) + int(self.w_imgray*0.4)
+                    cy = int(M['m01']/M['m00']) + int(self.h_imgray*0.4)          
+                white_circle_coordinates = [cx, cy]
+
+        cv2.circle(self.img_raw, (cx, cy), 2, (0, 0, 255), -1)
+        cv2.imshow("Region white point",imgray)
+        cv2.imshow("White point",thresh)
+        cv2.waitKey()
+
+        return white_circle_coordinates
+
+
+    def find_regions(self, min_thresh, max_thresh):
+        imgray = self.imgray[int(self.h_imgray*0.2) : int(self.h_imgray*0.8), int(self.w_imgray*0.2) : int(self.w_imgray*0.8)]
         w_imgray, h_imgray = imgray.shape
         cv2.circle(imgray, (int(w_imgray/2), int(h_imgray/2)), 100, (255, 255, 255), -1)
 
@@ -27,7 +52,7 @@ class Spoke():
             # Se buscan los momentos par ahayar centros de masa en x y en y
             M = cv2.moments(cnt)
             if M['m00'] != 0:
-                cx = int(M['m10']/M['m00'])
+                cx = int(M['m10']/M['m00']) 
                 cy = int(M['m01']/M['m00'])            
             centers = [cx, cy]
             coordinates_list.append(centers)
@@ -47,8 +72,8 @@ class Spoke():
         cv2.drawContours(imgray, contours, -1, (0,255,0), 3)
         for i in couples:
             cv2.line(imgray, i[0], i[1], (0,255,0), 1) 
-        cv2.imshow("final difference",self.img_raw)
-        cv2.imshow("final GRAY",imgray)
+        cv2.imshow("Imagen original",self.img_raw)
+        cv2.imshow("Regiones láminas",imgray)
         # cv2.imshow("final Thresh",thresh)
         cv2.waitKey()
 
@@ -75,23 +100,29 @@ class Spoke():
                         raise Exception('lines do not intersect')
 
                     d = (self.det(*line1), self.det(*line2))
-                    x = self.det(d, xdiff) / div
-                    y = self.det(d, ydiff) / div
+                    # Se le suma el valor int(self.w_imgray*0.2) para quitar el delay en la imagen original
+                    x = (self.det(d, xdiff) / div) + int(self.w_imgray*0.2)
+                    y = (self.det(d, ydiff) / div) + int(self.h_imgray*0.2)
                     intersection_points.append([x,y])
 
         return intersection_points
 
-    def evaluate_error(self, intersection_points, tolerance_mm):
+    def evaluate_error(self, white_circle_coordinates, intersection_points, tolerance_mm):
         print("Tolerance [mm] =", tolerance_mm) 
 
         error = 0
-        
+                
         for point1 in intersection_points:
+            # Se busca que cada uno de los puntos de intersección se encuentren dentro de un circulo de [tolerance_mm] de diametro
             for point2 in intersection_points:
                 if point1 != point2:
                     distance = self.distance_between_points(point1, point2)                    
                     if distance > tolerance_mm:
                         error = 1
+            # Se compara que cada punto se encuentre a por lo menos [tolerance_mm] de distancia del isocentro del circulo blanco
+            distance_to_white_point = self.distance_between_points(point1, white_circle_coordinates)
+            if distance_to_white_point > tolerance_mm:
+                error = 1       
 
         if error == 1:
             mensaje = "Fallo de intersección de lineas centrales. Compruebe la alineación del MLC con respecto al isocentro de radiación y el eje mecánico de rotación del colimador."

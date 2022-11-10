@@ -1,8 +1,9 @@
-from alineacion import Alineacion
+from field_size import RectangleDimensions
 
 
-path_img = './IMAGENES FORMATO TIFF/2Junio/1.Alineacion.tif'
-alineacion = Alineacion(path_img)
-tolerance_degrees = 2
-mensaje = alineacion.field_size(tolerance_degrees)
-print(mensaje)
+image_path = './compareimages/2junio_10x10.tiff' # 
+mm_px = 0.2506
+w_size = 100
+width = RectangleDimensions(image_path)
+width.evaluate_image(mm_px, w_size)
+print("width.relation_mmpx", width.relation_mmpx) 
