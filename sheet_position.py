@@ -3,16 +3,19 @@ from itertools import count
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-
+import pandas as pd
 class SheetPosition():
 
-    def __init__(self,path):
+    def __init__(self,path,dataframe,name_img):
         self.img_raw = cv2.imread(path)
         self.img = self.img_raw[:,:,0]
         self.img = self.img_raw[:,:,0]
         self.imgray = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
         self.gray_img = self.imgray
         self.h_imgray, self.w_imgray = self.imgray.shape
+        self.df = dataframe
+        self.name_img = name_img
+        self.new_row = {'Image':self.name_img}
 
     def find_rectangle_contour(self):
         self.imgRoi = self.img[480:542,480:542]
@@ -55,7 +58,7 @@ class SheetPosition():
         max_value = np.amax(img)
         prom_value = min_value + (max_value - min_value)/2
         return min_value, max_value, prom_value
-    def find_black_zones_distances(self, number_of_zones):
+    def evaluate_sheets(self, mm_px,number_of_zones,tolerance):
         _, max_value, prom_value = self.find_gray_levels(self.gray_img)
         _, self.thresh = cv2.threshold(self.gray_img, prom_value, max_value, cv2.THRESH_BINARY_INV)
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -83,13 +86,13 @@ class SheetPosition():
             contours_sub, _ = cv2.findContours(sub_region, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
             for cnt in contours_sub:            
                 x_sub,y_sub,w_sub,h_sub = cv2.boundingRect(cnt)  # Las variables "x" y "y" son el punto sup izq de la imagen        
-                dist_izq_sub = abs(self.square_center- x_sub)
-                dist_der_sub = abs(self.square_center - (x_sub+w_sub))
+                dist_izq_sub = round(abs(self.square_center- x_sub)*mm_px,2)
+                dist_der_sub = round(abs(self.square_center - (x_sub+w_sub))*mm_px,2)
                 
-            dist_izq_list.append(dist_izq_sub)  
-            dist_der_list.append(dist_der_sub)  
-            
-        return dist_izq_list,dist_der_list
+            self.new_row["dist_izq_"+str(i+1)]= dist_izq_sub
+            self.new_row["dist_der_"+str(i+1)]= dist_der_sub
+        self.df = self.df.append(self.new_row, ignore_index=True)           
+        return self.df
     def draw_line(self):
         # self.img_line = np.stack((self.imgRoi,)*3, axis=-1)
         img2 = np.zeros_like(self.img_rectangleRGB)
@@ -97,8 +100,8 @@ class SheetPosition():
         img2[:,:,1] = self.img_rectangle 
         img2[:,:,2] = self.img_rectangle 
         cv2.line(img2, (self.circle_list[0][0], self.circle_list[0][1]), (self.circle_list[1][0], self.circle_list[1][1]), (255,0 , 0), thickness=2)
-        cv2.imshow("thresh",img2)
-        cv2.waitKey()
+        # cv2.imshow("thresh",img2)
+        # cv2.waitKey()
         # Hallar distancia a bordes
 
 
