@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from cmath import sqrt
 from itertools import count
 import matplotlib.pyplot as plt
@@ -90,3 +91,6 @@ plt.ylabel('Cantidad de pixeles')
 plt.show()
 
 '''
+=======
+hacer
+>>>>>>> 9dead0b2a6ba92a1ea1ef97e1a3fa9bc3ff8c2e2
