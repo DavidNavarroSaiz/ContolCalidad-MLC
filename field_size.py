@@ -34,6 +34,12 @@ class RectangleDimensions():
         cv2.waitKey()
         cv2.destroyAllWindows()
 
+<<<<<<< HEAD
+    def evaluate_image(self,mmpx):
+        self.find_min_level()
+        self.find_contour()
+        self.evaluate_dimensions(mmpx)
+=======
     def evaluate_image(self,mmpx, w_size):
         self.find_min_level()
         self.find_contour()
@@ -46,3 +52,4 @@ class RectangleDimensions():
         # print(w)        
         # print(f"Relation = {self.relation_mmpx} mm/px")
 
+>>>>>>> 9dead0b2a6ba92a1ea1ef97e1a3fa9bc3ff8c2e2

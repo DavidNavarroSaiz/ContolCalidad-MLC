@@ -101,4 +101,5 @@ class SheetPosition():
         cv2.waitKey()
         # Hallar distancia a bordes
 
+
     
