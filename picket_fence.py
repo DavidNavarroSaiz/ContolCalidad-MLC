@@ -3,10 +3,7 @@ from itertools import count
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-<<<<<<< HEAD
 import pandas as pd
-=======
->>>>>>> 9dead0b2a6ba92a1ea1ef97e1a3fa9bc3ff8c2e2
 
 ''' Creación clase para prueba Picket Fence '''
 class Picket():
@@ -16,19 +13,12 @@ class Picket():
     - ROI_img -> imagen recortada con la región de interes a ser trabajada
     - gray_img -> imagen recortada pero de un solo canal (blanco y negro)
     '''
-<<<<<<< HEAD
     def __init__(self, path, dataframe, name_img):
         self.name_img = name_img
         self.img_raw = cv2.imread(path)
         self.ROI_img = self.img_raw[50:950, 20:1000]
         self.gray_img = cv2.cvtColor(self.ROI_img, cv2.COLOR_BGR2GRAY)  
         self.df = dataframe
-=======
-    def __init__(self,path):
-        self.img_raw = cv2.imread(path)
-        self.ROI_img = self.img_raw[50:950, 20:1000]
-        self.gray_img = cv2.cvtColor(self.ROI_img, cv2.COLOR_BGR2GRAY)  
->>>>>>> 9dead0b2a6ba92a1ea1ef97e1a3fa9bc3ff8c2e2
 
     '''
     Se buscan los valores de interes para aplicar thesholds
@@ -116,11 +106,7 @@ class Picket():
     - tolerance_mm -> Tolerancia en milimetros
     - number_of_zones -> Cantidad de placas o subregiones en cada región 
     '''
-<<<<<<< HEAD
     def evaluate_error(self, tolerance_mm, number_of_zones, mmpx):
-=======
-    def evaluate_error(self, tolerance_mm, number_of_zones):
->>>>>>> 9dead0b2a6ba92a1ea1ef97e1a3fa9bc3ff8c2e2
         print("Tolerance [mm] =", tolerance_mm) 
 
         x_values = self.find_black_zones_parameters(number_of_zones)
@@ -129,7 +115,6 @@ class Picket():
         for x_list in x_values:
             x_gauss = x_list[0]
             x_borders = x_list[1]
-<<<<<<< HEAD
             # print(f"Gaussian val = {round(x_gauss*mmpx, 4)}")
             for border in x_borders:
                 distance_1 = abs(x_gauss-border[0])
@@ -138,13 +123,6 @@ class Picket():
                 new_row = {'Image':self.name_img, 'Gaussian value [mm]':(round(x_gauss*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Tolerance [mm]':tolerance_mm}
                 self.df = self.df.append(new_row, ignore_index=True)
                 if (distance_1*mmpx > tolerance_mm) or (distance_2*mmpx > tolerance_mm):
-=======
-            for border in x_borders:
-                distance_1 = abs(x_gauss-border[0])
-                distance_2 = abs(x_gauss-border[1])
-                if (distance_1 > tolerance_mm) or (distance_2 > tolerance_mm):
-                    # print(distance_1, distance_2)
->>>>>>> 9dead0b2a6ba92a1ea1ef97e1a3fa9bc3ff8c2e2
                     error = 1
 
         if error == 1:
@@ -152,8 +130,4 @@ class Picket():
         else:
             mensaje = "Posicionamiento correcto."
 
-<<<<<<< HEAD
         return mensaje, self.df
-=======
-        return mensaje
->>>>>>> 9dead0b2a6ba92a1ea1ef97e1a3fa9bc3ff8c2e2
