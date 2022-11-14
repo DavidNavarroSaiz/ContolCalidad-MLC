@@ -110,7 +110,7 @@ class AlineacionYCuadratura():
         elif angles[0][1] == "Inferior":
             diff = angles[1][0] - angles [0][0]
 
-        error = 0 if (abs(diff) < tolerance_grados) else 1
+        error = 1 if (abs(diff) > tolerance_grados) else 1
 
         new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4))}
         self.df_diferencia_angulos = self.df_diferencia_angulos.append(new_row, ignore_index=True)
