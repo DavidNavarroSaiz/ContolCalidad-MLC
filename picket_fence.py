@@ -29,6 +29,19 @@ class Picket():
         prom_value = min_value + (max_value - min_value)/2
         return min_value, max_value, prom_value
 
+    def mode(self, dataset):
+        frequency = {}
+
+        for value in dataset:
+            frequency[value] = frequency.get(value, 0) + 1
+
+        most_frequent = max(frequency.values())
+
+        modes = [key for key, value in frequency.items()
+                        if value == most_frequent]
+
+        return modes
+
     '''
     Se busca en la imagen cada región de interes correspondiente a cada distribución
     '''
@@ -50,7 +63,7 @@ class Picket():
             # cv2.waitKey()
             h_cut = int(h / number_of_zones) # Tamaño de cada división
             w_cut = int(w * 0.4)             # Se hace una pequeña separación para la imagen
-            x_list_gauss = []                # Lista con el valor d ela gaussiana en cada subregión
+            x_list_center = []                # Lista con el valor d ela gaussiana en cada subregión
             x_list_borders = []              # Lista de valores correspondientes a Y,Z,...
 
             # Se divide cada region en placas ó subregiones, para obtener mayor precisión en las medidas
@@ -59,30 +72,22 @@ class Picket():
                 sub_region = self.gray_img[(y+h_cut*i):(y+h_cut*(i+1)), (x-w_cut):(x+w+w_cut)]
                 min_value_line, max_value_line, prom_value_line = self.find_gray_levels(sub_region)
                 
-                # Punto mas oscuro de esta region (Gaussiana)
-                _, thresh_min = cv2.threshold(sub_region, min_value_line, max_value_line, cv2.THRESH_BINARY_INV)
-                contours_min, _ = cv2.findContours(thresh_min, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+                # Puntos de interes
                 x_borders = [] # Lista con los valores izquierda y derecha, donde la opacidad es del 50%
-                x_gauss = 0    # Valor donde se encontrará la gaussiana de la subregión
+                x_center = 0 # Valor donde se encontrará el valor medio de x
                 area = 0                 
-
-                # Se busca que el contorno que se encuentre sea el mas significativo y que no es ruido
-                for cnt in contours_min:
-                    area_min = cv2.contourArea(cnt)
-                    if area_min > area:
-                        x_min,_,w_min,_ = cv2.boundingRect(cnt)
-                        x_gauss = x_min + (w_min/2) + (x-w_cut) # Formado por x_min (valor sup izq dentro de subregion), (w_min/2) el ancho de la subregion y (x-w_cut) para englobar en img_raw
-                x_list_gauss.append(x_gauss)
 
                 # Region que cumple con opacidad del 50% para encontrar valor izquierdo y derecho
                 _, thresh_prom = cv2.threshold(sub_region, prom_value_line, max_value_line, cv2.THRESH_BINARY_INV)
                 contours_prom, _ = cv2.findContours(thresh_prom, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                 x_prom,_,w_prom,_ = cv2.boundingRect(contours_prom[0])
-                x_prom_izq = x_prom + (x-w_cut)           # Misma logica que para x_gauss
-                x_prom_der = x_prom + w_prom + (x-w_cut)  # Misma logica que para x_gauss
+                x_prom_izq = x_prom + (x-w_cut)           # Misma logica que para x_center
+                x_prom_der = x_prom + w_prom + (x-w_cut)  # Misma logica que para x_center
+                x_center = x_prom + int(w_prom/2) + (x-w_cut)
                 x_borders.append(x_prom_izq)    
                 x_borders.append(x_prom_der)   
                 x_list_borders.append(x_borders)
+                x_list_center.append(x_center)
 
                 # cv2.imshow("final difference",sub_region)
                 # cv2.imshow("thresh_min",thresh_min)
@@ -91,12 +96,10 @@ class Picket():
                 # contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)  
 
             # De la lista de gaussianas de cada región se saca el promedio de estas
-            x_gauss = 0
-            for x in x_list_gauss:
-                x_gauss += x
-            x_gauss = int(x_gauss/len(x_list_gauss))
+            x_center = 0
+            x_center = self.mode(x_list_center)
 
-            x_values.append([x_gauss, x_list_borders])            
+            x_values.append([x_center[0], x_list_borders])            
         return x_values
         
 
@@ -112,22 +115,27 @@ class Picket():
         x_values = self.find_black_zones_parameters(number_of_zones)
         error = 0
 
+        cnt = 1
         for x_list in x_values:
-            x_gauss = x_list[0]
+            x_center = x_list[0]
             x_borders = x_list[1]
-            # print(f"Gaussian val = {round(x_gauss*mmpx, 4)}")
+            # print(f"Gaussian val = {round(x_center*mmpx, 4)}")
             for border in x_borders:
-                distance_1 = abs(x_gauss-border[0])
-                distance_2 = abs(x_gauss-border[1])
+                distance_1 = abs(x_center-border[0])
+                distance_2 = abs(x_center-border[1])
                 # print(f"Distancia izq = {round(distance_1*mmpx, 3)}, der = {round(distance_2*mmpx, 3)}")
-                new_row = {'Image':self.name_img, 'Gaussian value [mm]':(round(x_gauss*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Tolerance [mm]':tolerance_mm}
+                new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':number_of_zones*2-cnt+1}
                 self.df = self.df.append(new_row, ignore_index=True)
                 if (distance_1*mmpx > tolerance_mm) or (distance_2*mmpx > tolerance_mm):
                     error = 1
+                if cnt == 20:
+                    cnt = 1
+                else:
+                    cnt += 1
 
         if error == 1:
             mensaje = "Fallo de posicionamiento de las laminas por Picket Fence."
         else:
             mensaje = "Posicionamiento correcto."
 
-        return mensaje, self.df
+        return mensaje, self.df 
