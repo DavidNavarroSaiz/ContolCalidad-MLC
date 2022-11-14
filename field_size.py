@@ -40,9 +40,3 @@ class RectangleDimensions():
         self.evaluate_dimensions(mmpx)
         self.evaluate_relation(w_size)
 
-    def evaluate_relation(self, w_size):
-        _,_,w,_ = cv2.boundingRect(self.c)
-        self.relation_mmpx = w_size/w
-        # print(w)        
-        # print(f"Relation = {self.relation_mmpx} mm/px")
-

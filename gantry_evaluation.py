@@ -1,7 +1,7 @@
 from gantry import AlineacionYCuadratura
 
 
-mm_px = 0.2506
+mm_px = 0.283
 
 
 path_img = './IMAGENES FORMATO TIFF/2Junio/1.Alineacion.tif'
