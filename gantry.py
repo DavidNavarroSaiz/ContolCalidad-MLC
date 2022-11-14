@@ -4,10 +4,13 @@ import cv2
 import numpy as np
 
 class AlineacionYCuadratura():
-
-    def __init__(self,path):
+    def __init__(self,path, name_img, df_alineacion, df_diferencia_angulos, df_cuadratura):
         self.img_raw = cv2.imread(path)
         self.img = self.img_raw[:,:,0]
+        self.df_alineacion = df_alineacion
+        self.df_diferencia_angulos = df_diferencia_angulos
+        self.df_cuadratura = df_cuadratura
+        self.name_img = name_img
 
     def find_min_level(self,imgRoi):
         min = np.amin(imgRoi)
@@ -22,7 +25,8 @@ class AlineacionYCuadratura():
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         coordinates_list = []
-        angles = []
+        angles = [] # contiene lista con el angulo y si la lamina es superior o inferior
+        lamina = "no idea"
         for cnt in contours:
             # Las variables "x" y "y" son el centro del contorno
             x,y,w,h = cv2.boundingRect(cnt)
@@ -31,8 +35,10 @@ class AlineacionYCuadratura():
             # un punto x1,y1 a la izquierda de la region y un punto x2,y2 a la derecha
             # por tanto coordinates es [[x1,y1],[x2.y2]]
             coordinates = [[int((w*0.2)+x+int(w_img*0.12)), int(y+(h/2)+int(h_img*0.12))], [int((w*0.8)+x+int(w_img*0.12)), int(y+(h/2)+int(h_img*0.12))]]
-            coordinates_list.append(coordinates)  
-            angles.append(angle)
+            coordinates_list.append(coordinates) 
+
+            lamina = "Inferior" if y>400 else "Superior" 
+            angles.append([angle, lamina])
             # cv2.rectangle(self.img_raw, coordinates[0], coordinates[1], (255, 0, 0), 4)
 
         # print(coordinates_list, angles)
@@ -60,37 +66,64 @@ class AlineacionYCuadratura():
         coordinates_list, _ = self.find_white_zones_parameters(0.12, 0.88, 0.12, 0.88)
         w, h = 20, 130
 
-        diff_heights = []
+        diff_heights = [] # Contiene listas con informacion de diferencia de anchos y a que lámina pertenece
+        lamina = "no idea"
         for zone in coordinates_list:
+            # print("zone", zone)
             x1, y1, x2, y2 = int(zone[0][0]-w/2), int(zone[0][1]-h/2), int(zone[1][0]-w/2), int(zone[1][1]-h/2)
             height_1 = self.find_height(self.img,x1,y1,w,h)
             height_2 = self.find_height(self.img,x2,y2,w,h)
-            diff = abs(height_1 - height_2)
-            diff_heights.append(diff)
+            diff = height_1 - height_2
+            lamina = "Inferior" if y1>400 else "Superior"
+            diff_heights.append([diff, lamina])
 
         return diff_heights
 
 
     def alineacion(self, mm_px, tolerance_mm):
         diff_heights = self.find_alignment()
-        print("Tolerancia Alineaión [mm] =", tolerance_mm) 
-        print("Valores: ")
+        # print("Tolerancia Alineaión [mm] =", tolerance_mm) 
 
         error = 0
         for i in diff_heights:
-            print(i*mm_px)
-            if i*mm_px > tolerance_mm:
+            # print(i*mm_px)
+            new_row = {'Image':self.name_img, 'Diferencia ancho [mm]':(round(i[0]*mm_px, 4)), 'Lamina':i[1]}
+            self.df_alineacion = self.df_alineacion.append(new_row, ignore_index=True)
+            if abs(i[0])*mm_px > tolerance_mm:
                 error = 1
 
         if error == 1:
-            mensaje = "Fallo de alineación. Compruebe inclinacion del gantry y EPID."
+            mensaje = "\n La prueba excede la tolerancia. Revise: \n 1. El gantry, angulación en direccion GT. \n 2. La planicidad del EPID. \n Puede hacer uso del nivel de burbuja, digitales o semejantes. \n " 
         else:
-            mensaje = "Alineacion correcta."
+            mensaje = "\n La prueba cumple los parámetros de evaluación. Alineación. \n"
 
-        print(mensaje)        
+        return self.df_alineacion, mensaje      
 
-    def cuadratura(self, mm_px, tolerance_mm):
-        print("Tolerancia Cuadratura [mm] =", tolerance_mm) 
+    def comparacion_angulos(self, tolerance_grados):
+        _, angles = self.find_white_zones_parameters(0.12, 0.88, 0.12, 0.88)
+
+        # print("Tolerancia ángulos =", tolerance_grados) 
+
+        diff = 0
+        if angles[0][1] == "Superior":
+            diff = angles[0][0] - angles [1][0]
+        elif angles[0][1] == "Inferior":
+            diff = angles[1][0] - angles [0][0]
+
+        error = 0 if (abs(diff) < tolerance_grados) else 1
+
+        new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4))}
+        self.df_diferencia_angulos = self.df_diferencia_angulos.append(new_row, ignore_index=True)
+
+        if error == 1:
+            mensaje = "\n La prueba excede la tolerancia. \n Los bancos de multilaminas parecen no estar alineados, repita la prueba; en caso de persistir el error comuniquese con el equipo de mantenimiento. \n"
+        else:
+            mensaje = "\n La prueba cumple los parámetros de evaluación. Comparación de ángulos entre láminas. \n"
+
+        return self.df_diferencia_angulos, mensaje
+
+    def cuadratura(self, tolerance_grados):
+        # print("Tolerancia Cuadratura [mm] =", tolerance_grados) 
         # white_zones_angle son las regiones blancas correspondientes a las placas
         # reference_edge corresponde al borde inferior de la imagen para referencia
         _, white_zones_angle = self.find_white_zones_parameters(0.12, 0.88, 0.12, 0.88)
@@ -105,16 +138,18 @@ class AlineacionYCuadratura():
             error = 1
 
         # Verificar paralelismo entre zonas blanca y borde inferior
-        print("Valores: ")
         for zone_angle in white_zones_angle:
-            diff = abs(zone_angle - reference_edge)
-            print(diff*mm_px)
-            if diff*mm_px >= tolerance_mm:
+            diff = zone_angle[0] - reference_edge[0]
+            # Se añaden valores al dataframe
+            new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), "Lamina":zone_angle[1]}
+            self.df_cuadratura = self.df_cuadratura.append(new_row, ignore_index=True)
+            # print(diff*mm_px)
+            if abs(diff) >= tolerance_grados:
                 error = 1
 
         if error == 1:
-            mensaje = "Fallo de paralelismo. Compruebe la alineacion del banco de multilaminas con el borde del campo."
+            mensaje = "\n La prueba excede la tolerancia. \n El colimador secundario y el MLC no parecen estar alineados, repita la prueba; en caso de persistir el error comuniquese con el servicio de mantenimiento. \n"
         else:
-            mensaje = "Paralelismo correcto."
+            mensaje = "\n La prueba cumple los parámetros de evaluación. Cuadratura. \n"
 
-        print(mensaje)
+        return self.df_cuadratura, mensaje
