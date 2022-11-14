@@ -6,8 +6,10 @@ import numpy as np
 
 class Spoke():
 
-    def __init__(self,path):
-        self.img_raw = cv2.imread(path)
+    def __init__(self, path_img, dataframe, name_img):
+        self.df = dataframe
+        self.name_img = name_img
+        self.img_raw = cv2.imread(path_img)
         self.img = self.img_raw[:,:,0]
         self.imgray = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
         self.h_imgray, self.w_imgray = self.imgray.shape
@@ -29,10 +31,10 @@ class Spoke():
                     cy = int(M['m01']/M['m00']) + int(self.h_imgray*0.4)          
                 white_circle_coordinates = [cx, cy]
 
-        cv2.circle(self.img_raw, (cx, cy), 2, (0, 0, 255), -1)
-        cv2.imshow("Region white point",imgray)
-        cv2.imshow("White point",thresh)
-        cv2.waitKey()
+        # cv2.circle(self.img_raw, (cx, cy), 2, (0, 0, 255), -1)
+        # cv2.imshow("Region white point",imgray)
+        # cv2.imshow("White point",thresh)
+        # cv2.waitKey()
 
         return white_circle_coordinates
 
@@ -60,9 +62,10 @@ class Spoke():
             _,_,angle = cv2.fitEllipse(cnt)            
             # Se crea una lista llamada couples que retorna las parejas pertenecientes a la misma linea
             for i in angles:
-                if (abs(i-angle) < 3):
+                if (abs(i-angle) < 1):
                     index_value = angles.index(i)
                     couples.append([[cx,cy],coordinates_list[index_value]])
+            # print(couples)
 
             angles.append(angle)
 
@@ -70,12 +73,13 @@ class Spoke():
         # print("Len coordinates", len(coordinates_list))
         # print("Angles", angles)
         cv2.drawContours(imgray, contours, -1, (0,255,0), 3)
+
         for i in couples:
             cv2.line(imgray, i[0], i[1], (0,255,0), 1) 
-        cv2.imshow("Imagen original",self.img_raw)
-        cv2.imshow("Regiones láminas",imgray)
-        # cv2.imshow("final Thresh",thresh)
-        cv2.waitKey()
+        # cv2.imshow("Imagen original",self.img_raw)
+        # cv2.imshow("Regiones láminas",imgray)
+        # # cv2.imshow("final Thresh",thresh)
+        # cv2.waitKey()
 
         return coordinates_list, angles, couples
 
@@ -88,6 +92,9 @@ class Spoke():
 
     def find_intersection(self, couples):
         intersection_points = []
+
+        print(self.name_img)
+        print(couples)
 
         for line1 in couples:
             for line2 in couples:
@@ -104,29 +111,38 @@ class Spoke():
                     x = (self.det(d, xdiff) / div) + int(self.w_imgray*0.2)
                     y = (self.det(d, ydiff) / div) + int(self.h_imgray*0.2)
                     intersection_points.append([x,y])
+        print(intersection_points)
 
         return intersection_points
 
-    def evaluate_error(self, white_circle_coordinates, intersection_points, tolerance_mm):
+    def evaluate_error(self, white_circle_coordinates, intersection_points, tolerance_mm, relation_mmpx):
         print("Tolerance [mm] =", tolerance_mm) 
+        mmpx = relation_mmpx
 
         error = 0
-                
+        punto = 1                
         for point1 in intersection_points:
             # Se busca que cada uno de los puntos de intersección se encuentren dentro de un circulo de [tolerance_mm] de diametro
             for point2 in intersection_points:
                 if point1 != point2:
-                    distance = self.distance_between_points(point1, point2)                    
-                    if distance > tolerance_mm:
+                    distance = self.distance_between_points(point1, point2)    
+                    # Se añaden valores al dataframe
+                    new_row = {'Image':self.name_img, 'Distance [mm]':(round(distance*mmpx, 4)), 'Distance to:':f'Point {punto}-Others'}
+                    self.df = self.df.append(new_row, ignore_index=True)               
+                    if distance*mmpx > tolerance_mm:
                         error = 1
             # Se compara que cada punto se encuentre a por lo menos [tolerance_mm] de distancia del isocentro del circulo blanco
             distance_to_white_point = self.distance_between_points(point1, white_circle_coordinates)
-            if distance_to_white_point > tolerance_mm:
-                error = 1       
+            # Se añaden valores al dataframe
+            new_row = {'Image':self.name_img, 'Distance [mm]':(round(distance_to_white_point*mmpx, 4)), 'Distance to:':'White point'}
+            self.df = self.df.append(new_row, ignore_index=True)
+            if distance_to_white_point*mmpx > tolerance_mm:
+                error = 1
+            punto += 1        
 
         if error == 1:
-            mensaje = "Fallo de intersección de lineas centrales. Compruebe la alineación del MLC con respecto al isocentro de radiación y el eje mecánico de rotación del colimador."
+            mensaje = "La prueba excede la tolerancia. Si alguno o varios de los campos esta perceptiblemente desalineado con el isocentro, comuniquese con el servicio de mantenimiento. En caso contrario, compruebe la ubicacón de la fiducia y realice la prueba nuevamente."
         else:
-            mensaje = "Alineacion del MLC correcta."
+            mensaje = "El eje de rotación del colimador coincide con el isocentro. La prueba cumple los parámetros de evauación."
 
-        return mensaje
+        return mensaje, self.df
