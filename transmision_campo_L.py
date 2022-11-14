@@ -1,4 +1,4 @@
-''' Se importan librerias necesarias '''
+''' Se importan librerias necesarias ''' 
 from itertools import count
 import matplotlib.pyplot as plt
 import cv2
@@ -12,14 +12,16 @@ class TransmisionL():
     - ROI_img -> imagen recortada con la región de interes a ser trabajada
     - gray_img -> imagen recortada pero de un solo canal (blanco y negro)
     '''
-    def __init__(self, path):
+    def __init__(self, path, df, name_img):
+        self.df = df
+        self.name_img = name_img
         self.img_raw = cv2.imread(path)
         self.gray_img = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
         self.ROI_img = cv2.cvtColor(self.img_raw[110:840,180:840], cv2.COLOR_BGR2GRAY)
         
 
     '''
-    Se 
+    Se buscan las regiones de interes
     '''
     def interest_regions(self):
         self.sup_region = self.ROI_img[0:400, :]
@@ -59,91 +61,122 @@ class TransmisionL():
         h_img, w_img = img.shape
 
         # Separaciones para posteriormente comenzar a dibujar las regiones de interes
-        separation_to_vertical_border = 25 * mmpx
-        separation_to_horizontal_border = 5 * mmpx
-        separation_between_regions = 5 * mmpx
+        separation_to_vertical_border = 25 / mmpx
+        separation_to_horizontal_border = 5 / mmpx
+        separation_between_regions = 5 / mmpx
 
         # Número de regiones posibles que cumplen la condición de separación de 5mm 
         number_of_regions = int((h_img - 2*separation_to_vertical_border) / separation_between_regions)
+        print(number_of_regions)
 
-        count = 1
+        count = 1        
+        n_counts = int(number_of_regions/2)+2 if (number_of_regions%2 == 0) else int(number_of_regions/2)+3
         for i in range(number_of_regions): # Región inferior
             if (i == 0):
-                y1 = h_img - separation_to_vertical_border - separation_between_regions
-                y2 = h_img - separation_to_vertical_border
-                x1 = separation_to_horizontal_border
-                x2 = w_img - separation_to_horizontal_border
+                y1 = int(h_img - separation_to_vertical_border - separation_between_regions)
+                y2 = int(h_img - separation_to_vertical_border)
+                x1 = int(separation_to_horizontal_border)
+                x2 = int(w_img - separation_to_horizontal_border)
                 region = img[y1:y2, x1:x2]
                 # cv2.imshow("region", region)
                 # cv2.waitKey()
 
                 min_value, max_value, prom_value = self.find_gray_levels(region) # Extrae valores de interes de pixeles
+
                 print("Region %s" % str(count))
                 print(" -  MaxValue =", max_value)
                 print(" -  MinValue =", min_value)
                 print(" -  PromValue =", int(prom_value))
+
+                # Se crea CVS
+                new_row_1 = {'Image':self.name_img, 'Valor intensidad':int(min_value), 'Lamina':1, 'Prueba':"Sup derecha min"}
+                new_row_2 = {'Image':self.name_img, 'Valor intensidad':int(max_value), 'Lamina':1, 'Prueba':"Sup derecha max"}
+                new_row_3 = {'Image':self.name_img, 'Valor intensidad':int(prom_value), 'Lamina':1, 'Prueba':"Sup derechaprom"}
+                self.df = self.df.append(new_row_1, ignore_index=True)
+                self.df = self.df.append(new_row_2, ignore_index=True)
+                self.df = self.df.append(new_row_3, ignore_index=True)  
+
                 count += 1
 
-                hist = cv2.calcHist([region], [0], None, [256], [0, 256]) # Creación de histograma
-                plt.plot(hist, color='gray' )
-                plt.xlabel('Intensidad de pixel')
-                plt.ylabel('Cantidad de pixeles')
-                plt.show()
-                cv2.destroyAllWindows()
+                # hist = cv2.calcHist([region], [0], None, [256], [0, 256]) # Creación de histograma
+                # plt.plot(hist, color='gray' )
+                # plt.xlabel('Intensidad de pixel')
+                # plt.ylabel('Cantidad de pixeles')
+                # plt.show()
+                # cv2.destroyAllWindows()
 
                 cv2.rectangle(img,(x1, y1), (x2, y2), (0,255,0), 1)
 
             elif (i%2 == 0): # Regiones intermedias, incrementando de abajo hacia arriba
-                y1 = h_img - separation_to_vertical_border - (i+1)*separation_between_regions
-                y2 = h_img - separation_to_vertical_border - (i)*separation_between_regions
-                x1 = separation_to_horizontal_border
-                x2 = w_img - separation_to_horizontal_border
+                y1 = int(h_img - separation_to_vertical_border - (i+1)*separation_between_regions)
+                y2 = int(h_img - separation_to_vertical_border - (i)*separation_between_regions)
+                x1 = int(separation_to_horizontal_border)
+                x2 = int(w_img - separation_to_horizontal_border)
                 region = img[y1:y2, x1:x2]
-                cv2.imshow("region", region)
-                cv2.waitKey()
+                # cv2.imshow("region", region)
+                # cv2.waitKey()
 
                 min_value, max_value, prom_value = self.find_gray_levels(region)
                 print("Region %s" % str(count))
                 print(" -  MaxValue =", max_value)
                 print(" -  MinValue =", min_value)
                 print(" -  PromValue =", int(prom_value))
+
+                # Se añaden valores al CSV
+                new_row_1 = {'Image':self.name_img, 'Valor intensidad':int(min_value), 'Lamina':n_counts-count, 'Prueba':"Sup derecha min"}
+                new_row_2 = {'Image':self.name_img, 'Valor intensidad':int(max_value), 'Lamina':n_counts-count, 'Prueba':"Sup derecha max"}
+                new_row_3 = {'Image':self.name_img, 'Valor intensidad':int(prom_value), 'Lamina':n_counts-count, 'Prueba':"Sup derecha prom"}
+                self.df = self.df.append(new_row_1, ignore_index=True)
+                self.df = self.df.append(new_row_2, ignore_index=True)
+                self.df = self.df.append(new_row_3, ignore_index=True)  
+
                 count += 1
 
-                hist = cv2.calcHist([region], [0], None, [256], [0, 256])
-                plt.plot(hist, color='gray' )
-                plt.xlabel('Intensidad de pixel')
-                plt.ylabel('Cantidad de pixeles')
-                plt.show()
-                cv2.destroyAllWindows()
+                # hist = cv2.calcHist([region], [0], None, [256], [0, 256])
+                # plt.plot(hist, color='gray' )
+                # plt.xlabel('Intensidad de pixel')
+                # plt.ylabel('Cantidad de pixeles')
+                # plt.show()
+                # cv2.destroyAllWindows()
 
                 cv2.rectangle(img,(x1, y1), (x2, y2), (0,255,0), 1)
 
             elif (i == number_of_regions-1) and ((i-1)%2 != 0): # Última region, esta se dibuja si es posible, quiere decir si la ultima reción esta a mas de 5mm de distancia
-                y1 = separation_to_vertical_border
-                y2 = separation_to_vertical_border + separation_between_regions
-                x1 = separation_to_horizontal_border
-                x2 = w_img - separation_to_horizontal_border
+                y1 = int(separation_to_vertical_border)
+                y2 = int(separation_to_vertical_border + separation_between_regions)
+                x1 = int(separation_to_horizontal_border)
+                x2 = int(w_img - separation_to_horizontal_border)
                 region = img[y1:y2, x1:x2]
-                cv2.imshow("region", region)
-                cv2.waitKey()
+                # cv2.imshow("region", region)
+                # cv2.waitKey()
 
                 min_value, max_value, prom_value = self.find_gray_levels(region)
                 print("Region %s" % str(count))
                 print(" -  MaxValue =", max_value)
                 print(" -  MinValue =", min_value)
                 print(" -  PromValue =", int(prom_value))
+
+                new_row_1 = {'Image':self.name_img, 'Valor intensidad':int(min_value), 'Lamina':n_counts, 'Prueba':"Sup derecha min"}
+                new_row_2 = {'Image':self.name_img, 'Valor intensidad':int(max_value), 'Lamina':n_counts, 'Prueba':"Sup derecha max"}
+                new_row_3 = {'Image':self.name_img, 'Valor intensidad':int(prom_value), 'Lamina':n_counts, 'Prueba':"Sup derecha prom"}
+                self.df = self.df.append(new_row_1, ignore_index=True)
+                self.df = self.df.append(new_row_2, ignore_index=True)
+                self.df = self.df.append(new_row_3, ignore_index=True)  
+
                 count += 1
 
-                hist = cv2.calcHist([region], [0], None, [256], [0, 256])
-                plt.plot(hist, color='gray' )
-                plt.xlabel('Intensidad de pixel')
-                plt.ylabel('Cantidad de pixeles')
-                plt.show()
-                cv2.destroyAllWindows()
-                cv2.rectangle(img,(x1, y1), (x2, y2), (0,255,0), 1)
+                # hist = cv2.calcHist([region], [0], None, [256], [0, 256])
+                # plt.plot(hist, color='gray' )
+                # plt.xlabel('Intensidad de pixel')
+                # plt.ylabel('Cantidad de pixeles')
+                # plt.show()
+                # cv2.destroyAllWindows()
+                # cv2.rectangle(img,(x1, y1), (x2, y2), (0,255,0), 1)
             
-        cv2.imshow("Zona", img)
-        cv2.waitKey()
+        # cv2.imshow("Zona", img)
+        # cv2.waitKey()
+
+        return self.df
 
     '''
     Segundo analisis para la prueba de transmisión, prueba región inferior derecha, donde:
@@ -160,21 +193,22 @@ class TransmisionL():
         img = self.bot_region_der
         h_img, w_img = img.shape
 
-        img = img[int(h_img*0.1):h_img, 0:int(w_img*0.9)]
+        img = img[int(h_img*0.1):int(h_img*0.85), 0:int(w_img*0.9)]
         h_img, w_img = img.shape
 
-        hist = cv2.calcHist([img], [0], None, [256], [0, 256])
-        plt.plot(hist, color='gray' )
-        plt.xlabel('Intensidad de pixel')
-        plt.ylabel('Cantidad de pixeles')
-        plt.show()
-        cv2.destroyAllWindows()
+        # hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+        # plt.plot(hist, color='gray' )
+        # plt.xlabel('Intensidad de pixel')
+        # plt.ylabel('Cantidad de pixeles')
+        # plt.show()
+        # cv2.destroyAllWindows()
 
         min_value, max_value, prom_value = self.find_gray_levels(img)
 
         coordinate_list, _, thresh, contours = self.find_region(img, min_thesh, max_thesh)
 
         count = 1
+        print(coordinate_list)
         for coordinate in coordinate_list:
             cx, cy, w, h = coordinate[0], coordinate[1], coordinate[2], coordinate[3]
             x1, x2 = 0, w_img
@@ -182,31 +216,41 @@ class TransmisionL():
             # cv2.rectangle(img, (x1, y1), (x2, y2), (0,255,0), 2)
             region = img[y1:y2, x1:x2]
 
-            cv2.imshow("region", region)
-            cv2.waitKey()
+            # cv2.imshow("region", region)
+            # cv2.waitKey()
 
             min_value, max_value, prom_value = self.find_gray_levels(region)
             print("Region %s" % str(count))
             print(" -  MaxValue =", max_value)
             print(" -  MinValue =", min_value)
             print(" -  PromValue =", int(prom_value))
+
+            new_row_1 = {'Image':self.name_img, 'Valor intensidad':int(min_value), 'Lamina':count, 'Prueba':"Inf derecha min"}
+            new_row_2 = {'Image':self.name_img, 'Valor intensidad':int(max_value), 'Lamina':count, 'Prueba':"Inf derecha max"}
+            new_row_3 = {'Image':self.name_img, 'Valor intensidad':int(prom_value), 'Lamina':count, 'Prueba':"Inf derecha prom"}
+            self.df = self.df.append(new_row_1, ignore_index=True)
+            self.df = self.df.append(new_row_2, ignore_index=True)
+            self.df = self.df.append(new_row_3, ignore_index=True) 
+
             count += 1
 
-            hist = cv2.calcHist([region], [0], None, [256], [0, 256])
-            plt.plot(hist, color='gray' )
-            plt.xlabel('Intensidad de pixel')
-            plt.ylabel('Cantidad de pixeles')
-            plt.show()
-            cv2.destroyAllWindows()
+            # hist = cv2.calcHist([region], [0], None, [256], [0, 256])
+            # plt.plot(hist, color='gray' )
+            # plt.xlabel('Intensidad de pixel')
+            # plt.ylabel('Cantidad de pixeles')
+            # plt.show()
+            # cv2.destroyAllWindows()
 
             # PARA FUTURAS IMPLEMENTACIONES
             # for i in range(divisions):
             #     separation = (w_img/divisions)/2 # Es la mitad del ancho de la imagen divido la cantidad de divisiones
             #     cv2.circle(img, (int(2*i*separation+separation), cy), h, (0,255,255), 2)
 
-        cv2.imshow("img", img)
-        cv2.imshow("thresh", thresh)
-        cv2.waitKey()
+        # cv2.imshow("img", img)
+        # cv2.imshow("thresh", thresh)
+        # cv2.waitKey()
+
+        return self.df
 
 
     '''
