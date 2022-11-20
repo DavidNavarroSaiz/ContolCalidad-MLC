@@ -100,9 +100,7 @@ class SheetPosition():
         img2[:,:,1] = self.img_rectangle 
         img2[:,:,2] = self.img_rectangle 
         cv2.line(img2, (self.circle_list[0][0], self.circle_list[0][1]), (self.circle_list[1][0], self.circle_list[1][1]), (255,0 , 0), thickness=2)
-        # cv2.imshow("thresh",img2)
-        # cv2.waitKey()
-        # Hallar distancia a bordes
+
 
 
     
