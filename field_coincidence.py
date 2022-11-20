@@ -66,7 +66,7 @@ class FieldCoincidence():
 
         contours_mask, _ = cv2.findContours(image=self.img_mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
         x_rectangle_mask,y_rectangle_mask,w_rectangle_mask,h_rectangle_mask = cv2.boundingRect(contours_mask[0])
-
+        error = 0
         min_sum = 10000
         max_sum = 0
         for i in self.circle_list:  

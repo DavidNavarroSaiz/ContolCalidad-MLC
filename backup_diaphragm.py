@@ -59,9 +59,8 @@ class BackupDiaphragm():
                 # cv2.waitKey()
                 # print("cX,cY",cX,cY)
 
-    def calculate_distance(self,mm_px):
-        # dist_izq_sub = round(abs(self.white_center[0]- self.x_rectangle)*mm_px,2)
-        # dist_der_sub = round(abs(self.white_center[0] - (self.x_rectangle+self.w_rectangle))*mm_px,2)
+    def calculate_distance(self,distance,tolerance,mm_px):
+        error = 0
         self.find_white_circle()
 
         contours_mask, _ = cv2.findContours(image=self.img_mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
@@ -69,6 +68,16 @@ class BackupDiaphragm():
 
         dist_izq = round(abs(self.white_center[0]- x_rectangle_mask)*mm_px,2)
         dist_der = round(abs(self.white_center[0] - (x_rectangle_mask+w_rectangle_mask))*mm_px,2)
+        
+        if ((dist_izq - distance)> tolerance or (dist_der - distance)> tolerance ):
+            error = 1 
+
+        if error == 1:
+            mensaje = "\n  Los diafragmas de respaldo estan en la posicion correcta.  La prueba cumple los parámetros de evauación.  \n Compruebe que el campo irradiado coincida con la referencia seleccionada, realice la prueba nuevamente;\n en caso de persistir el error, ejecute la prueba con el método de película radiocrómica. \n " 
+        else:
+            mensaje = "\n Los diafragmas de respaldo estan en la posicion correcta.  La prueba cumple los parámetros de evauación.  \n La distancia del diafragma X1 es de:",dist_izq,"y La distancia del diafragma X2 es de :",dist_der
+        
         new_row = {'Image':self.name_img, 'distancia izquierda[mm]':dist_izq, 'distancia derecha[mm]':dist_der, 'suma[mm]':(dist_izq+dist_der)}
         self.df = self.df.append(new_row, ignore_index=True)
-        return self.df
+
+        return self.df,mensaje

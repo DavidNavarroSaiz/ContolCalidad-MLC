@@ -8,6 +8,7 @@ import datetime
 mmpx = 0.283
 numer_of_sheets = 20
 tolerance = 6
+distance = 56
 columns = {
     'Image':[]
             }
@@ -24,6 +25,6 @@ for name_img in os.listdir(directory):
     if os.path.isfile(path_img):
         sheet = SheetPosition(path_img,df,name_img)
         sheet.find_white_circle()  
-        df = sheet.evaluate_sheets(mmpx,numer_of_sheets,tolerance)                    
-
+        df,mensaje = sheet.evaluate_sheets(mmpx,numer_of_sheets,distance,tolerance)                    
+        print('resultado image',name_img,' :', mensaje)
 df.to_csv(f"./csvs/sheet_position_{datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')}.csv", mode='a', index=False, header=True)

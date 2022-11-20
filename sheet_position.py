@@ -58,7 +58,7 @@ class SheetPosition():
         max_value = np.amax(img)
         prom_value = min_value + (max_value - min_value)/2
         return min_value, max_value, prom_value
-    def evaluate_sheets(self, mm_px,number_of_zones,tolerance):
+    def evaluate_sheets(self, mm_px,number_of_zones,distance,tolerance):
         _, max_value, prom_value = self.find_gray_levels(self.gray_img)
         _, self.thresh = cv2.threshold(self.gray_img, prom_value, max_value, cv2.THRESH_BINARY_INV)
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -91,8 +91,12 @@ class SheetPosition():
                 
             self.new_row["dist_izq_"+str(i+1)]= dist_izq_sub
             self.new_row["dist_der_"+str(i+1)]= dist_der_sub
+            if  ((dist_izq_sub- distance)> tolerance or (dist_der_sub- distance)> tolerance):
+                mensaje = "  la lamina", i+1," excede la tolerancia, con una distancia izquierda: ",dist_izq_sub,"derecha:",dist_der_sub," \n Si la posición de las laminas esta perceptiblemente equivocada comuniquese con el servicio de mantenimiento.\n En caso contrario, compruebe el posicionamiento de las fiducias, realice la prueba nuevamente. " 
+            else:
+                mensaje = "\n La posicion de la hoja es precisa, la prueba cumple los parámetros de evauación \n"
         self.df = self.df.append(self.new_row, ignore_index=True)           
-        return self.df
+        return self.df,mensaje
     def draw_line(self):
         # self.img_line = np.stack((self.imgRoi,)*3, axis=-1)
         img2 = np.zeros_like(self.img_rectangleRGB)
