@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 
-''' Creación clase para prueba Picket Fence '''
+''' Creación clase para prueba Transmision de campo L '''
 class TransmisionL():
     '''
     Se cargan las imagenes:
@@ -21,7 +21,8 @@ class TransmisionL():
         
 
     '''
-    Se buscan las regiones de interes
+    Se defines las regiones de interes Las principales 
+    son superior derecha e inferior izquierda
     '''
     def interest_regions(self):
         self.sup_region = self.ROI_img[0:400, :]
@@ -34,13 +35,16 @@ class TransmisionL():
         self.bot_region_der = self.bot_region[:, 340:660]
 
     '''
-    Se buscan los valores de interes para aplicar thesholds
+    Se buscan los valores de intensidad dentro de la imagen para aplicar theshold
     '''
     def find_gray_levels(self, img):
         min_value = np.amin(img)
         max_value = np.amax(img)
         prom_value = min_value + (max_value - min_value)/2
         return min_value, max_value, prom_value
+
+ 
+           
 
     '''
     Primer analisis para la prueba de transmisión, prueba región superior derecha, donde:
@@ -67,7 +71,6 @@ class TransmisionL():
 
         # Número de regiones posibles que cumplen la condición de separación de 5mm 
         number_of_regions = int((h_img - 2*separation_to_vertical_border) / separation_between_regions)
-        print(number_of_regions)
 
         count = 1        
         n_counts = int(number_of_regions/2)+2 if (number_of_regions%2 == 0) else int(number_of_regions/2)+3
@@ -78,8 +81,6 @@ class TransmisionL():
                 x1 = int(separation_to_horizontal_border)
                 x2 = int(w_img - separation_to_horizontal_border)
                 region = img[y1:y2, x1:x2]
-                # cv2.imshow("region", region)
-                # cv2.waitKey()
 
                 min_value, max_value, prom_value = self.find_gray_levels(region) # Extrae valores de interes de pixeles
 
@@ -98,6 +99,7 @@ class TransmisionL():
 
                 count += 1
 
+                # # Creación de histograma necesario para el analisis visual
                 # hist = cv2.calcHist([region], [0], None, [256], [0, 256]) # Creación de histograma
                 # plt.plot(hist, color='gray' )
                 # plt.xlabel('Intensidad de pixel')
@@ -113,8 +115,6 @@ class TransmisionL():
                 x1 = int(separation_to_horizontal_border)
                 x2 = int(w_img - separation_to_horizontal_border)
                 region = img[y1:y2, x1:x2]
-                # cv2.imshow("region", region)
-                # cv2.waitKey()
 
                 min_value, max_value, prom_value = self.find_gray_levels(region)
                 print("Region %s" % str(count))
@@ -147,8 +147,6 @@ class TransmisionL():
                 x1 = int(separation_to_horizontal_border)
                 x2 = int(w_img - separation_to_horizontal_border)
                 region = img[y1:y2, x1:x2]
-                # cv2.imshow("region", region)
-                # cv2.waitKey()
 
                 min_value, max_value, prom_value = self.find_gray_levels(region)
                 print("Region %s" % str(count))
@@ -172,11 +170,9 @@ class TransmisionL():
                 # plt.show()
                 # cv2.destroyAllWindows()
                 # cv2.rectangle(img,(x1, y1), (x2, y2), (0,255,0), 1)
-            
-        # cv2.imshow("Zona", img)
-        # cv2.waitKey()
 
         return self.df
+  
 
     '''
     Segundo analisis para la prueba de transmisión, prueba región inferior derecha, donde:
@@ -188,6 +184,7 @@ class TransmisionL():
     - Mínimo valor de intencidad de pixel
     - Valor promedio de intencidad de pixeles (pico del histograma)
     '''
+    
     def bot_der_analysis(self, min_thesh, max_thesh):
         self.interest_regions()
         img = self.bot_region_der
@@ -205,6 +202,7 @@ class TransmisionL():
 
         min_value, max_value, prom_value = self.find_gray_levels(img)
 
+        # _Encontrar regiones
         coordinate_list, _, thresh, contours = self.find_region(img, min_thesh, max_thesh)
 
         count = 1
@@ -213,18 +211,11 @@ class TransmisionL():
             cx, cy, w, h = coordinate[0], coordinate[1], coordinate[2], coordinate[3]
             x1, x2 = 0, w_img
             y1, y2 = cy-int(h/2), cy+int(h/2)
-            # cv2.rectangle(img, (x1, y1), (x2, y2), (0,255,0), 2)
             region = img[y1:y2, x1:x2]
 
-            # cv2.imshow("region", region)
-            # cv2.waitKey()
-
             min_value, max_value, prom_value = self.find_gray_levels(region)
-            print("Region %s" % str(count))
-            print(" -  MaxValue =", max_value)
-            print(" -  MinValue =", min_value)
-            print(" -  PromValue =", int(prom_value))
 
+            # Creacion dataframe apra reporte de información
             new_row_1 = {'Image':self.name_img, 'Valor intensidad':int(min_value), 'Lamina':count, 'Prueba':"Inf derecha min"}
             new_row_2 = {'Image':self.name_img, 'Valor intensidad':int(max_value), 'Lamina':count, 'Prueba':"Inf derecha max"}
             new_row_3 = {'Image':self.name_img, 'Valor intensidad':int(prom_value), 'Lamina':count, 'Prueba':"Inf derecha prom"}
@@ -240,16 +231,6 @@ class TransmisionL():
             # plt.ylabel('Cantidad de pixeles')
             # plt.show()
             # cv2.destroyAllWindows()
-
-            # PARA FUTURAS IMPLEMENTACIONES
-            # for i in range(divisions):
-            #     separation = (w_img/divisions)/2 # Es la mitad del ancho de la imagen divido la cantidad de divisiones
-            #     cv2.circle(img, (int(2*i*separation+separation), cy), h, (0,255,255), 2)
-
-        # cv2.imshow("img", img)
-        # cv2.imshow("thresh", thresh)
-        # cv2.waitKey()
-
         return self.df
 
 
@@ -261,10 +242,11 @@ class TransmisionL():
         contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
         area_list = []
-        coordinate_list = [] # [cx, cy, w, h]
+        coordinate_list = [] # Compuesta por [cx, cy, w, h]
         for cnt in contours:
             area = cv2.contourArea(cnt)
             M = cv2.moments(cnt)
+            #  Calculo de momentos
             if M['m00'] != 0:
                 cx = int(M['m10']/M['m00'])
                 cy = int(M['m01']/M['m00'])        
@@ -295,5 +277,10 @@ plt.plot(hist, color='gray' )
 plt.xlabel('Intensidad de pixel')
 plt.ylabel('Cantidad de pixeles')
 plt.show()
+
+print("Region %s" % str(count))
+print(" -  MaxValue =", max_value)
+print(" -  MinValue =", min_value)
+print(" -  PromValue =", int(prom_value))
 
 '''

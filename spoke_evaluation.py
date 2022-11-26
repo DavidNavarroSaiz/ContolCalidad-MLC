@@ -6,7 +6,9 @@ import os
 columns = {
     'Image':[],
     'Distance [mm]':[],
-    'Distance to:':[]
+    'Distance to:':[],
+    'Resultado':[],
+    'Tolerancia':[]
             }
 df = pd.DataFrame(columns)
 
@@ -17,7 +19,7 @@ directory = './IMAGENES FORMATO TIFF/SpotShot/'
 for name_img in os.listdir(directory):
     path_img = os.path.join(directory, name_img)    
     # checking if it is a file
-    if os.path.isfile(path_img):
+    if os.path.isfile(path_img) and path_img.endswith('.tif'):
         prueba = Spoke(path_img, df, name_img)
         white_circle_coordinates = prueba.find_white_circle(97, 200)      # centro del circulo blanco
         coordinates_list, angles, couples = prueba.find_regions(230, 255) # coordenadas de las lineas oscuras
