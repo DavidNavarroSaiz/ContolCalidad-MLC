@@ -1,0 +1,33 @@
+{% extends "/public/templates/public_template.html" %}
+
+{%block title %} Jinja {% endblock  %}
+
+{%block main %} 
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>Jinja</h1>
+            <h4> variables </h4>
+            <hr>
+            <p>
+                Name: {{ my_name }}
+
+            </p>
+
+            <h4> Loop </h4>
+            <hr>
+            <ul>
+                {% for lang in langs %}
+                <li>
+                    {{loop.index}}: {{lang}}
+                </li>
+                {% endfor %}
+            </ul>
+                
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

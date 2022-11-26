@@ -4,22 +4,24 @@ import datetime
 from backup_diaphragm import BackupDiaphragm
 
 
-mmpx = 0.283
-numer_of_sheets = 20 
-tolerance = 6
-distance = 55
+mmpx = 0.253
+tolerance = 1
+distance = 50
+ancho_teorico = 100
+tolerancia_ancho = 2
 columns = {
     'Image':[],
-    'distancia izquierda[mm]':[],
-    'distancia derecha[mm]':[],
-    'suma[mm]':[],            }
+    'X1[mm]':[], 
+    'X2[mm]':[],
+    'ancho campo irradiado[mm]':[],            }
 df = pd.DataFrame(columns)
 
-directory = './IMAGENES FORMATO TIFF/BackupDiafragma/Campo 10x10/good'
+directory = './IMAGENES FORMATO TIFF/BackupDiafragma/backup_2'
 for name_img in os.listdir(directory): 
     path_img = os.path.join(directory, name_img)    
     if os.path.isfile(path_img):
         backup = BackupDiaphragm(path_img,df,name_img)
-        df,mensaje = backup.calculate_distance(distance,tolerance,mmpx)
+        df,mensaje = backup.calculate_distance(distance,tolerance,ancho_teorico,tolerancia_ancho,mmpx)
+        backup.generar_pdf("prueba")
         print('resultado image',name_img,' :', mensaje)
-df.to_csv(f"./csvs/backup_diaphragm_{datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')}.csv", mode='a', index=False, header=True)
+# df.to_csv(f"./csvs/backup_diaphragm_{datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')}.csv", mode='a', index=False, header=True)

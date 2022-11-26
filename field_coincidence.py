@@ -7,10 +7,13 @@ import pandas as pd
 from scipy.spatial.distance import euclidean
 
 class FieldCoincidence():
-
+    """
+    Esta clase se utiliza para tal cosa
+    
+    """
     def __init__(self,path,dataframe,name_img):
-        self.img_raw = cv2.imread(path)
-        self.img = self.img_raw[:,:,0]
+        self.img_raw = cv2.imread(path) 
+        self.img = self.img_raw[:,:,0] 
         self.img = self.img_raw[:,:,0]
         self.imgray = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
         self.gray_img = self.imgray
@@ -20,6 +23,11 @@ class FieldCoincidence():
         self.new_row = {'Image':self.name_img}
 
     def find_rectangle_contour(self):
+
+        """
+        Definicion del rectangulo de capo de radiacion
+
+        """
         self.imgRoi = self.img[480:542,480:542]
         average = np.average(self.imgRoi, axis=0)
         self.average = np.average(average, axis=0)
@@ -30,22 +38,32 @@ class FieldCoincidence():
         self.c = contours[0]
 
     def rectangle_roi(self):
+        """
+        Segmentacion de campo de radiacion
+
+        """
         self.find_rectangle_contour()
         self.x_rectangle,self.y_rectangle,self.w_rectangle,self.h_rectange = cv2.boundingRect(self.c)
-        self.img_rectangle = self.imgray[self.x_rectangle:(self.x_rectangle+self.w_rectangle), self.y_rectangle:(self.y_rectangle+self.h_rectange)]
-        self.img_rectangleRGB = self.img_raw[self.x_rectangle:(self.x_rectangle+self.w_rectangle), self.y_rectangle:(self.y_rectangle+self.h_rectange)]
-        self.img_mask = self.mask[self.x_rectangle:(self.x_rectangle+self.w_rectangle), self.y_rectangle:(self.y_rectangle+self.h_rectange)]
+        self.img_rectangle = self.imgray[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
+        self.img_rectangleRGB = self.img_raw[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
+        self.img_mask = self.mask[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         
 
     def find_white_circle(self):
-        self.rectangle_roi()
-        _, self.thresh = cv2.threshold(self.img_rectangle, 105, 255, cv2.THRESH_BINARY_INV)
-        
+        """
+        Encontrar los puntos blancos en la imagen
+
+        """
+        self.rectangle_roi() 
+        _, self.thresh = cv2.threshold(self.img_rectangle, 103, 255, cv2.THRESH_BINARY_INV)
+        cv2.imshow("img",self.thresh)
+        cv2.waitKey()
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         self.circle_list = []
         for c in contours:
             a = cv2.contourArea(c)
             p = cv2.arcLength(c,True)
+
             ci = p**2/(4*np.pi*a)
             
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -54,28 +72,28 @@ class FieldCoincidence():
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 self.circle_list.append((cX,cY))
-    def find_gray_levels(self, img):
-        min_value = np.amin(img)
-        max_value = np.amax(img)
-        prom_value = min_value + (max_value - min_value)/2
-        return min_value, max_value, prom_value
-    def evaluate_square_dimensions(self,distance,tolerance,mm_px):
-        # dist_izq_sub = round(abs(self.white_center[0]- self.x_rectangle)*mm_px,2)
-        # dist_der_sub = round(abs(self.white_center[0] - (self.x_rectangle+self.w_rectangle))*mm_px,2)
-        self.find_white_circle()
+                # cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 0, 255), 1) # dibujar punto blanco encontrado
+                
+    def evaluate_square_dimensions(self,distance_white_points,tolerance_white_points,distance_edge,tolerance_edge,mm_px):
+        
+        """
+        Evalua distancia entre puntos blancos y evalua distancia de los puntos 
+        blancos hasta los bordes mas cercanos.
 
+        """
+        
+        self.find_white_circle()
         contours_mask, _ = cv2.findContours(image=self.img_mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
         x_rectangle_mask,y_rectangle_mask,w_rectangle_mask,h_rectangle_mask = cv2.boundingRect(contours_mask[0])
-        error = 0
         min_sum = 10000
         max_sum = 0
+        A,B,C,D = 0,0,0,0
         for i in self.circle_list:  
             suma = i[0] + i[1]
             if suma > max_sum:
                 max_sum = suma
             if suma < min_sum :
                 min_sum = suma
-
         umbral_sup= max_sum*0.8
         umbral_inf= min_sum*1.2
         for item in self.circle_list:
@@ -88,23 +106,57 @@ class FieldCoincidence():
                     B = item
                 elif item[0] < item[1]:
                     C = item
+        error_2 = 0
+        error_1 = 0
+        print(A,B,C,D)
+        if(A != 0 and B != 0 and C != 0 and D != 0):
+            AC = round(abs(euclidean(A[1],C[1]))*mm_px,2)
+            BD = round(abs(euclidean(B[1],D[1]))*mm_px,2)
+            AB = round(abs(euclidean(A[0],B[0]))*mm_px,2)
+            CD = round(abs(euclidean(C[0],D[0]))*mm_px,2)
+            A_X1 = round(abs(euclidean(A[0],x_rectangle_mask))*mm_px,2)
+            A_Y1 = round(abs(euclidean(A[1],y_rectangle_mask))*mm_px,2)
+            B_X1 = round(abs(euclidean(B[0],w_rectangle_mask))*mm_px,2)
+            B_Y1 = round(abs(euclidean(B[1],y_rectangle_mask))*mm_px,2)
+            C_X1 = round(abs(euclidean(C[0],x_rectangle_mask))*mm_px,2)
+            C_Y1 = round(abs(euclidean(C[1],h_rectangle_mask))*mm_px,2)
+            D_X1 = round(abs(euclidean(D[0],w_rectangle_mask))*mm_px,2)
+            D_Y1 = round(abs(euclidean(D[1],h_rectangle_mask))*mm_px,2)
 
-           
-        X1_distance = round(abs(euclidean(A[1],C[1]))*mm_px,2)
-        X2_distance = round(abs(euclidean(B[1],D[1]))*mm_px,2)
-        Y1_distance = round(abs(euclidean(A[0],B[0]))*mm_px,2)
-        Y2_distance = round(abs(euclidean(C[0],D[0]))*mm_px,2)
-        
-        if ((X1_distance - distance)> tolerance or (X2_distance - distance)> tolerance or (Y1_distance - distance)> tolerance or (Y2_distance - distance)> tolerance):
-            error = 1 
+            list_white_distances = [AC,BD,AB,CD]
+            list_edge_distances= [A_X1,A_Y1,B_X1,B_Y1,C_X1,C_Y1,D_X1,D_Y1]
+            # cv2.drawContours(self.img_rectangleRGB, contours_mask, -1, (0, 255, 0), 3)
+            # cv2.imshow("list_white_distances",self.img_rectangleRGB)
+            # cv2.waitKey()
 
-        if error == 1:
-            mensaje = "\n  La dimensión del campo luminoso no es concordante, revise la posición de las fiducias y repita la prueba \n Si el error persiste, ejecute la prueba con el método de hoja milimetrada para verificar la dimensión del campo luminoso.  \n En caso de una apertura de campo luminoso equivocada, comuniquelo al servicio de mantenimiento para corregir la falla. \n " 
+            for dist_white in list_white_distances:
+                if abs(dist_white - distance_white_points)> tolerance_white_points:
+                    error_1 = 1
+            for dist_edge in list_edge_distances:
+                if abs(dist_edge - distance_edge)> tolerance_edge:
+                    error_2 = 1 
+
+
+            if error_2 == 1:
+                mensaje = "\n  La dimensión del campo luminoso no es concordante, revise la posición de las fiducias y repita la prueba \n Si el error persiste, ejecute la prueba con el método de hoja milimetrada para verificar la dimensión del campo luminoso.  \n En caso de una apertura de campo luminoso equivocada, comuniquelo al servicio de mantenimiento para corregir la falla. \n " 
+            elif error_1 == 1:
+                mensaje = "El campo de radiación no coincide con el esperado. Revise que se halla seleccionado e iradiado el campo 12x12. Adquiera una nueva imagen con el campo 12x12."
+            else:
+                mensaje = "\n La prueba cumple los parámetros de evaluación. \n"
+
+            new_row = {'Image':self.name_img, 'A-C[mm]':distance_white_points-AC, 'B-D[mm]':distance_white_points- BD,
+            'A-B[mm]':distance_white_points-AB,'C-D[mm]':distance_white_points-CD,'A-X1[mm]':distance_edge-A_X1,
+            'A-Y1[mm]':distance_edge-A_Y1, 'B-X1[mm]':distance_edge-B_X1,'B_Y1[mm]':distance_edge-B_Y1,'C-X1[mm]':distance_edge-C_X1,
+            'C-Y1[mm]':distance_edge-C_Y1, 'D-X1[mm]':distance_edge-D_X1,'D_Y1[mm]':distance_edge-D_Y1,'Error campo de radiacion':error_1,'Error distacia bordes':error_2}
+            self.df = self.df.append(new_row, ignore_index=True)
         else:
-            mensaje = "\n La prueba cumple los parámetros de evaluación. \n"
-
-        new_row = {'Image':self.name_img, 'A-C[mm]':X1_distance, 'B-D[mm]':X2_distance, 'A-B[mm]':Y1_distance,'C-D[mm]':Y2_distance}
-        self.df = self.df.append(new_row, ignore_index=True)
+            mensaje = "Error encontrando los puntos blanco"
+            error = True
+            new_row = {'Image':self.name_img, 'A-C[mm]':"error", 'B-D[mm]':"error",
+            'A-B[mm]':"error",'C-D[mm]':"error",'A-X1[mm]':"error",
+            'A-Y1[mm]':"error", 'B-X1[mm]':"error",'B_Y1[mm]':"error",'C-X1[mm]':"error",
+            'C-Y1[mm]':"error", 'D-X1[mm]':"error",'D_Y1[mm]':"error",'Error campo de radiacion':"error encontrando los puntos blancos",'Error distacia bordes':"error encontrando los puntos blancos"}
+            self.df = self.df.append(new_row, ignore_index=True)
         return self.df,mensaje
 
     
