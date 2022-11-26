@@ -7,7 +7,8 @@ columns = {
     'Image':[],
     'Valor intensidad':[],
     'Lamina':[],
-    'Prueba':[]
+    'Prueba':[],
+    'Resultado':[]
             } 
 df = pd.DataFrame(columns)
 
@@ -18,7 +19,7 @@ directory = './IMAGENES FORMATO TIFF/Transmision_CampoL/'
 for name_img in os.listdir(directory):
     path_img = os.path.join(directory, name_img)    
     # checking if it is a file
-    if os.path.isfile(path_img):
+    if os.path.isfile(path_img) and path_img.endswith('.tif'):
         prueba = TransmisionL(path_img, df, name_img)
         df = prueba.sup_der_analysis(mmpx)
         df = prueba.bot_der_analysis(220, 230) 

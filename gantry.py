@@ -1,9 +1,19 @@
+''' Se importan librerias necesarias '''
 from itertools import count
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 
+''' Creación clase para prueba Picket Fence '''
 class AlineacionYCuadratura():
+    '''
+    Se cargan las imagenes:
+    - img_raw -> imagen original
+    - img -> imagen de un solo canal (blanco y negro)
+    Además valores establecidos de:
+    - name_img -> Necesario para creación de tabla con los datos necesarios
+    - df_x -> Dataframes donde se almacena la información
+    '''
     def __init__(self,path, name_img, df_alineacion, df_diferencia_angulos, df_cuadratura):
         self.img_raw = cv2.imread(path)
         self.img = self.img_raw[:,:,0]
@@ -12,11 +22,21 @@ class AlineacionYCuadratura():
         self.df_cuadratura = df_cuadratura
         self.name_img = name_img
 
+    '''
+    Hallar los valores de intensidad minimo y de grises
+    de una imagen
+    '''
     def find_min_level(self,imgRoi):
         min = np.amin(imgRoi)
         graylevel = (255-min)*0.5 + min
         return graylevel
 
+    '''
+    Hallar las regiones blancas dentro de una imagen recortada con los aprametros
+    que le entran a la función y entrega una lista compuesta de:
+    - Coordenadas centrales de la region blanca
+    - Angulos de cada una de las regiones
+    '''
     def find_white_zones_parameters(self, y1_percentage, y2_percentage, x1_percentage, x2_percentage):
         imgray = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
         w_img, h_img = imgray.shape
@@ -39,16 +59,9 @@ class AlineacionYCuadratura():
 
             lamina = "Inferior" if y>400 else "Superior" 
             angles.append([angle, lamina])
-            # cv2.rectangle(self.img_raw, coordinates[0], coordinates[1], (255, 0, 0), 4)
-
-        # print(coordinates_list, angles)
-        # cv2.drawContours(thresh, contours, -1, (0,255,0), 3)
-        # cv2.imshow("final difference",self.img_raw)
-        # cv2.imshow("final Thresh",thresh)
-        # cv2.waitKey()
-
         return coordinates_list, angles
 
+    # Halla el valor de altura de una región en una imagen
     def find_height(self,img,x,y,w,h):
         # Las variables "x" y "y" son el punto superior izquierdo
         imgRoi = img[y:y+h, x:x+w]
@@ -57,9 +70,6 @@ class AlineacionYCuadratura():
         contours, _ = cv2.findContours(image=mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
         c = contours[1]
         x,y,w,h = cv2.boundingRect(c)
-        # cv2.rectangle(mask, (x, y), (x + w, y + h), (0,0,255), 1)
-        # cv2.imshow("final difference",mask)
-        # cv2.waitKey()
         return h
 
     def find_alignment(self):
@@ -69,7 +79,6 @@ class AlineacionYCuadratura():
         diff_heights = [] # Contiene listas con informacion de diferencia de anchos y a que lámina pertenece
         lamina = "no idea"
         for zone in coordinates_list:
-            # print("zone", zone)
             x1, y1, x2, y2 = int(zone[0][0]-w/2), int(zone[0][1]-h/2), int(zone[1][0]-w/2), int(zone[1][1]-h/2)
             height_1 = self.find_height(self.img,x1,y1,w,h)
             height_2 = self.find_height(self.img,x2,y2,w,h)
@@ -87,10 +96,13 @@ class AlineacionYCuadratura():
         error = 0
         for i in diff_heights:
             # print(i*mm_px)
-            new_row = {'Image':self.name_img, 'Diferencia ancho [mm]':(round(i[0]*mm_px, 4)), 'Lamina':i[1]}
-            self.df_alineacion = self.df_alineacion.append(new_row, ignore_index=True)
             if abs(i[0])*mm_px > tolerance_mm:
+                new_row = {'Image':self.name_img, 'Diferencia ancho [mm]':(round(i[0]*mm_px, 4)), 'Lamina':i[1], 'Resultado':"No pasa"}
                 error = 1
+            else:
+                new_row = {'Image':self.name_img, 'Diferencia ancho [mm]':(round(i[0]*mm_px, 4)), 'Lamina':i[1], 'Resultado':"Pasa"}
+            self.df_alineacion = self.df_alineacion.append(new_row, ignore_index=True)
+
 
         if error == 1:
             mensaje = "\n La prueba excede la tolerancia. Revise: \n 1. El gantry, angulación en direccion GT. \n 2. La planicidad del EPID. \n Puede hacer uso del nivel de burbuja, digitales o semejantes. \n " 
@@ -99,10 +111,11 @@ class AlineacionYCuadratura():
 
         return self.df_alineacion, mensaje      
 
+    '''
+    Compara los valores de angulos entre dos zonas horizontales dentro de la imagen
+    '''
     def comparacion_angulos(self, tolerance_grados):
         _, angles = self.find_white_zones_parameters(0.12, 0.88, 0.12, 0.88)
-
-        # print("Tolerancia ángulos =", tolerance_grados) 
 
         diff = 0
         if angles[0][1] == "Superior":
@@ -110,20 +123,24 @@ class AlineacionYCuadratura():
         elif angles[0][1] == "Inferior":
             diff = angles[1][0] - angles [0][0]
 
-        error = 1 if (abs(diff) > tolerance_grados) else 1
-
-        new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4))}
-        self.df_diferencia_angulos = self.df_diferencia_angulos.append(new_row, ignore_index=True)
+        error = 1 if (abs(diff) > tolerance_grados) else 0
 
         if error == 1:
             mensaje = "\n La prueba excede la tolerancia. \n Los bancos de multilaminas parecen no estar alineados, repita la prueba; en caso de persistir el error comuniquese con el equipo de mantenimiento. \n"
+            new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), 'Resultado':"No pasa"}
         else:
             mensaje = "\n La prueba cumple los parámetros de evaluación. Comparación de ángulos entre láminas. \n"
+            new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), 'Resultado':"Pasa"}
+
+        self.df_diferencia_angulos = self.df_diferencia_angulos.append(new_row, ignore_index=True)
 
         return self.df_diferencia_angulos, mensaje
 
+    '''
+    Encuentra la diferencia entre los angulos de las regiones horizontales y 
+    el borde inferior de la imagen
+    '''
     def cuadratura(self, tolerance_grados):
-        # print("Tolerancia Cuadratura [mm] =", tolerance_grados) 
         # white_zones_angle son las regiones blancas correspondientes a las placas
         # reference_edge corresponde al borde inferior de la imagen para referencia
         _, white_zones_angle = self.find_white_zones_parameters(0.12, 0.88, 0.12, 0.88)
@@ -141,11 +158,13 @@ class AlineacionYCuadratura():
         for zone_angle in white_zones_angle:
             diff = zone_angle[0] - reference_edge[0]
             # Se añaden valores al dataframe
-            new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), "Lamina":zone_angle[1]}
-            self.df_cuadratura = self.df_cuadratura.append(new_row, ignore_index=True)
-            # print(diff*mm_px)
             if abs(diff) >= tolerance_grados:
                 error = 1
+                new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), "Lamina":zone_angle[1], 'Resultado':"No pasa"}
+            else:
+                new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), "Lamina":zone_angle[1], 'Resultado':"Pasa"}
+
+            self.df_cuadratura = self.df_cuadratura.append(new_row, ignore_index=True)
 
         if error == 1:
             mensaje = "\n La prueba excede la tolerancia. \n El colimador secundario y el MLC no parecen estar alineados, repita la prueba; en caso de persistir el error comuniquese con el servicio de mantenimiento. \n"
@@ -153,3 +172,19 @@ class AlineacionYCuadratura():
             mensaje = "\n La prueba cumple los parámetros de evaluación. Cuadratura. \n"
 
         return self.df_cuadratura, mensaje
+
+'''
+CODIGOS IMPORTANTES PARA PRUEBAS
+
+    # cv2.rectangle(self.img_raw, coordinates[0], coordinates[1], (255, 0, 0), 4)
+# print(coordinates_list, angles)
+# cv2.drawContours(thresh, contours, -1, (0,255,0), 3)
+# cv2.imshow("final difference",self.img_raw)
+# cv2.imshow("final Thresh",thresh)
+# cv2.waitKey()
+
+# cv2.rectangle(mask, (x, y), (x + w, y + h), (0,0,255), 1)
+# cv2.imshow("final difference",mask)
+# cv2.waitKey()
+
+'''

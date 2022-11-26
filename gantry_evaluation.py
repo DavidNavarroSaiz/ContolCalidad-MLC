@@ -3,9 +3,9 @@ import pandas as pd
 import os
 import datetime
 
-columns_alineacion = {'Image':[], 'Diferencia ancho [mm]' :[], 'Lamina':[]}
-columns_diferencia_angulos = {'Image':[], 'Diferencia angulos [grados]' :[]}
-columns_cuadratura = {'Image':[], 'Diferencia angulos [grados]' :[], 'Lamina':[]}
+columns_alineacion = {'Image':[], 'Diferencia ancho [mm]' :[], 'Lamina':[], 'Resultado':[]}
+columns_diferencia_angulos = {'Image':[], 'Diferencia angulos [grados]' :[], 'Resultado':[]}
+columns_cuadratura = {'Image':[], 'Diferencia angulos [grados]' :[], 'Lamina':[], 'Resultado':[]}
 df_alineacion = pd.DataFrame(columns_alineacion)
 df_diferencia_angulos = pd.DataFrame(columns_diferencia_angulos)
 df_cuadratura = pd.DataFrame(columns_cuadratura)
@@ -17,7 +17,7 @@ directory = './IMAGENES FORMATO TIFF/Gantry/'
 for name_img in os.listdir(directory):
     path_img = os.path.join(directory, name_img)    
     # checking if it is a file
-    if os.path.isfile(path_img):
+    if os.path.isfile(path_img) and path_img.endswith('.tif'):
         prueba = AlineacionYCuadratura(path_img, name_img, df_alineacion, df_diferencia_angulos, df_cuadratura)
         df_alineacion, msj_alineacion = prueba.alineacion(mm_px,tolerance_mm)
         df_diferencia_angulos, msj_diff_ang = prueba.comparacion_angulos(tolerance_grados)
