@@ -11,7 +11,7 @@ class Picket():
     Se cargan las imagenes:
     - img_raw -> imagen original
     - ROI_img -> imagen recortada con la región de interes a ser trabajada
-    - gray_img -> imagen recortada pero de un solo canal (blanco y negro)
+    - gray_img -> imagen recortada pero de un solo canal (blanco o negro)
     Además valores establecidos de:
     - x1_ROI, x2_ROI, y1_ROI, y2_ROI -> Valores para recortar img_raw
     - name_img -> Necesario para creación de tabla con los datos necesarios
@@ -51,7 +51,7 @@ class Picket():
         return modes
 
     '''
-    Se busca en la imagen cada región oscura
+    Se busca en la imagen cada región oscura, asociada a un segmento irradiado
     '''
     def find_black_zones_parameters(self, number_of_zones):
         _, max_value, prom_value = self.find_gray_levels(self.gray_img)
@@ -101,7 +101,7 @@ class Picket():
 
     '''
     Se evalua la diferencia entre el valor de la gaussiana de cada región
-    con el valor izquierdo y derecho de esta con opacidad del 50%
+    con el valor de distancia hacia la izquierda y derecha de cada segmento
     - tolerance_mm -> Tolerancia en milimetros
     - number_of_zones -> Cantidad de placas o subregiones en cada región 
     '''

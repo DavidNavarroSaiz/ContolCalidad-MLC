@@ -85,7 +85,7 @@ class AlineacionYCuadratura():
             diff = height_1 - height_2
             lamina = "Inferior" if y1>400 else "Superior"
             diff_heights.append([diff, lamina])
-
+            
         return diff_heights
 
 

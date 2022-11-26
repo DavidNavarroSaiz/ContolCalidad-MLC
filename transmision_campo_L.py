@@ -35,13 +35,16 @@ class TransmisionL():
         self.bot_region_der = self.bot_region[:, 340:660]
 
     '''
-    Se buscan los valores de interes para aplicar thesholds
+    Se buscan los valores de intensidad dentro de la imagen para aplicar theshold
     '''
     def find_gray_levels(self, img):
         min_value = np.amin(img)
         max_value = np.amax(img)
         prom_value = min_value + (max_value - min_value)/2
         return min_value, max_value, prom_value
+
+ 
+           
 
     '''
     Primer analisis para la prueba de transmisión, prueba región superior derecha, donde:
@@ -169,6 +172,7 @@ class TransmisionL():
                 # cv2.rectangle(img,(x1, y1), (x2, y2), (0,255,0), 1)
 
         return self.df
+  
 
     '''
     Segundo analisis para la prueba de transmisión, prueba región inferior derecha, donde:
@@ -180,6 +184,7 @@ class TransmisionL():
     - Mínimo valor de intencidad de pixel
     - Valor promedio de intencidad de pixeles (pico del histograma)
     '''
+    
     def bot_der_analysis(self, min_thesh, max_thesh):
         self.interest_regions()
         img = self.bot_region_der
