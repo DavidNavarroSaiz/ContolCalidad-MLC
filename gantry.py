@@ -3,7 +3,8 @@ from itertools import count
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 ''' Creación clase para prueba Picket Fence '''
 class AlineacionYCuadratura():
     '''

@@ -5,7 +5,7 @@ import datetime
 import cv2
 
 mmpx = 0.253 
-mmpx = 0.1854 
+mmpx = 0.2536
 tolerance_white_points = 5
 distance_white_points = 100
 tolerance_edge = 1

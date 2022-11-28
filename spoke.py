@@ -4,7 +4,8 @@ from itertools import count
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 '''Creación de clase para analisis de Spoke Shot'''
 class Spoke():
     '''

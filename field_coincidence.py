@@ -5,7 +5,8 @@ import cv2
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import euclidean
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 class FieldCoincidence():
     """
     Esta clase se utiliza para tal cosa
@@ -56,8 +57,8 @@ class FieldCoincidence():
         """
         self.rectangle_roi() 
         _, self.thresh = cv2.threshold(self.img_rectangle, 103, 255, cv2.THRESH_BINARY_INV)
-        cv2.imshow("img",self.thresh)
-        cv2.waitKey()
+        # cv2.imshow("img",self.thresh)
+        # cv2.waitKey()
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         self.circle_list = []
         for c in contours:
@@ -108,7 +109,7 @@ class FieldCoincidence():
                     C = item
         error_2 = 0
         error_1 = 0
-        print(A,B,C,D)
+        # print(A,B,C,D)
         if(A != 0 and B != 0 and C != 0 and D != 0):
             AC = round(abs(euclidean(A[1],C[1]))*mm_px,2)
             BD = round(abs(euclidean(B[1],D[1]))*mm_px,2)

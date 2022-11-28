@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 from skimage.metrics import structural_similarity as ssim
 import cv2
 import numpy as np
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 class CompareImages():
     def __init__(self,pathA, pathB):
         self.imageA = cv2.imread(pathA)[:,:,0]

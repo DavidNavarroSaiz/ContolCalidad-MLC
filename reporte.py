@@ -2,7 +2,9 @@ from fpdf import FPDF
 import pandas as pd
 import math
 import numpy as np
+import datetime
 class PDF2(FPDF):
+
     def header(self):
         self.image('./IMAGENES FORMATO TIFF/BackupDiafragma/backup_2/Backup1.tif', x = 0, y = 0, w = 210, h = 297)
         
@@ -109,28 +111,9 @@ class PDF2(FPDF):
             contador_ter = contador_ter + 1 
     
             
-    def Promedio_objetivo(self,df):
-        self.set_font('arial', 'B', 12)
-        self.cell(100, 20, 'Calificacion Promedio por objetivo', 0, 1, 'L')
-        contador_obj  = 1
-        lista_objetivos_calificacion = df.values.tolist()
-        for objetivos_calificacion in lista_objetivos_calificacion:
-            self.set_font('arial', 'B', 10)
-            self.cell(100, 10, str(objetivos_calificacion[0])+': ', 0, 0, 'L')
-            self.set_font('arial', '', 10)
-            self.cell(40, 10, str(round(objetivos_calificacion[1],2)), 0, 1, 'C')
-            
-            contador_obj = contador_obj+ 1
+    
 
-    def promedio_terapia(self,df):
-        self.set_font('arial', 'B', 12)
-        self.cell(100, 20, 'Calificacion Promedio por terapia', 0, 1, 'L')
-        contador_ter  = 1
-        lista_terapia_calificacion = df.values.tolist()
-        for terapia_calificacion in lista_terapia_calificacion:
-            self.set_font('arial', 'B', 10)
-            self.cell(100, 10,str(terapia_calificacion[0])+': ', 0, 0, 'L')
-            self.set_font('arial', '', 10)
-            self.cell(40, 10, str(round(terapia_calificacion[1],2)), 0, 1, 'C')
-            
-            contador_ter = contador_ter+ 1
+    
+
+
+    

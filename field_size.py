@@ -2,6 +2,8 @@ from repeatability import CompareImages
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class RectangleDimensions():   
     def __init__(self, path_img, name_img, dataframe):
