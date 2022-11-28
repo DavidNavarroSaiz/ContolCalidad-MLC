@@ -72,7 +72,7 @@ class Picket():
             x_list_center = []               # Lista con el valor d ela gaussiana en cada subregión
             x_list_borders = []              # Lista de valores correspondientes a Y,Z,...
 
-            # Se divide cada region en placas ó subregiones, para obtener mayor precisión en las medidas
+            # Se divide cada segmento en subregiones, cada una vinculada a una lámina
             for i in range(number_of_zones):
                 # Sub regiones van de arriba a abajo
                 sub_region = self.gray_img[int(y+h_cut*i+h_cut*0.4):int(y+h_cut*(i+1)-h_cut*0.4), (x-w_cut):(x+w+w_cut)]

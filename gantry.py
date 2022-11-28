@@ -86,7 +86,7 @@ class AlineacionYCuadratura():
             diff = height_1 - height_2
             lamina = "Inferior" if y1>400 else "Superior"
             diff_heights.append([diff, lamina])
-            
+
         return diff_heights
 
 
@@ -138,11 +138,10 @@ class AlineacionYCuadratura():
         return self.df_diferencia_angulos, mensaje
 
     '''
-    Encuentra la diferencia entre los angulos de las regiones horizontales y 
-    el borde inferior de la imagen
+    Encuentra la diferencia entre los angulos de las láminas y el borde del colimador secundario
     '''
     def cuadratura(self, tolerance_grados):
-        # white_zones_angle son las regiones blancas correspondientes a las placas
+        # white_zones_angle son las regiones blancas correspondientes al campo obstruido por la lámina
         # reference_edge corresponde al borde inferior de la imagen para referencia
         _, white_zones_angle = self.find_white_zones_parameters(0.12, 0.88, 0.12, 0.88)
         _, reference_edge = self.find_white_zones_parameters(0.88, 1.0, 0.12, 0.88)
@@ -155,7 +154,7 @@ class AlineacionYCuadratura():
             print("No se encuentra borde inferior")
             error = 1
 
-        # Verificar paralelismo entre zonas blanca y borde inferior
+        # Verificar paralelismo entre campo de las láminas y borde inferior del campo, colimador secundario
         for zone_angle in white_zones_angle:
             diff = zone_angle[0] - reference_edge[0]
             # Se añaden valores al dataframe

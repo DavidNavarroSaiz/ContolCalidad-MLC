@@ -6,6 +6,14 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class RectangleDimensions():   
+    '''
+    Se cargan las imagenes:
+    - img_raw -> imagen original
+    - img -> imagen de un solo canal (blanco y negro)
+    Además valores establecidos de:
+    - name_img -> Necesario para creación de tabla con los datos necesarios
+    - df_x -> Dataframes donde se almacena la información
+    '''
     def __init__(self, path_img, name_img, dataframe):
         self.name_img = name_img
         self.img_raw = cv2.imread(path_img)
