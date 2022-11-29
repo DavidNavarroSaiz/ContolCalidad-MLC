@@ -11,7 +11,7 @@ columns = {
 
 df = pd.DataFrame(columns)
 # print(columns) 
-directory = './IMAGENES FORMATO TIFF/PrecisionPosicionHoja/2_20x20_Y2'
+directory = './IMAGENES FORMATO TIFF/PrecisionPosicionHoja/10x10'
 field_size = directory[-2::]
 # mmpx = 0.253
 mmpx = 0.2536
@@ -29,6 +29,7 @@ for name_img in os.listdir(directory):
         sheet = SheetPosition(path_img,df,name_img,field_size)
         sheet.find_white_circle()  
         df,mensaje = sheet.evaluate_sheets(mmpx,numer_of_sheets,distance,tolerance)  
+        sheet.draw_line()
         sheet.generar_pdf("sheet_position",tolerance)                 
         print('resultado image',name_img,' :', mensaje)
 df.to_csv(f"./csvs/sheet_position_{field_size}x{field_size}_{datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')}.csv", mode='a', index=False, header=True)

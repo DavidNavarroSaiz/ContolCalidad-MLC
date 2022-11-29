@@ -48,8 +48,8 @@ class FieldCoincidence():
         self.img_rectangle = self.imgray[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_rectangleRGB = self.img_raw[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_mask = self.mask[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
-        
-
+        # cv2.imshow("img",self.img_mask)
+        # cv2.waitKey()
     def find_white_circle(self):
         """
         Encontrar los puntos blancos en la imagen
@@ -57,8 +57,6 @@ class FieldCoincidence():
         """
         self.rectangle_roi() 
         _, self.thresh = cv2.threshold(self.img_rectangle, 103, 255, cv2.THRESH_BINARY_INV)
-        # cv2.imshow("img",self.thresh)
-        # cv2.waitKey()
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         self.circle_list = []
         for c in contours:
@@ -73,8 +71,9 @@ class FieldCoincidence():
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 self.circle_list.append((cX,cY))
-                # cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 0, 255), 1) # dibujar punto blanco encontrado
-                
+        #         cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 255, 0), 3) # dibujar punto blanco encontrado
+        # cv2.imshow("img_rectangleRGB",self.img_rectangleRGB)        
+        # cv2.waitKey()
     def evaluate_square_dimensions(self,distance_white_points,tolerance_white_points,distance_edge,tolerance_edge,mm_px):
         
         """

@@ -44,7 +44,8 @@ class BackupDiaphragm():
         self.img_rectangle = self.imgray[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_rectangleRGB = self.img_raw[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_mask = self.mask[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
-        
+        # cv2.imshow("img",self.img_mask)
+        # cv2.waitKey()
     
     def find_white_circle(self):
         """
@@ -55,8 +56,7 @@ class BackupDiaphragm():
         
         
         _, self.thresh = cv2.threshold(self.img_rectangle, 105, 255, cv2.THRESH_BINARY_INV)
-        # cv2.imshow("img",self.thresh)
-        # cv2.waitKey()
+        
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         # self.circle_list = []
         for c in contours:
@@ -67,15 +67,13 @@ class BackupDiaphragm():
                 
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 if ci < 1.22:
-                    # print("CIRCLE")
                     M = cv2.moments(c)
                     cX = int(M["m10"] / M["m00"])
                     cY = int(M["m01"] / M["m00"])
-                    # self.circle_list.append((cX,cY))
                     self.white_center = (cX,cY)
                     cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 255, 0), 3)
-                    # cv2.imshow("image",self.img_rectangleRGB)
-                    # cv2.waitKey()
+                    cv2.imshow("image",self.img_rectangleRGB)
+                    cv2.waitKey()
                 # else :
                     # print("NO CIRCLE")
                     # print(ci)
