@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import warnings
+from reporte import PDF2
+import datetime
 warnings.simplefilter(action='ignore', category=FutureWarning)
 '''Creación de clase para analisis de Spoke Shot'''
 class Spoke():
@@ -160,8 +162,42 @@ class Spoke():
             punto += 1        
 
         if error == 1:
-            mensaje = "La prueba excede la tolerancia. Si alguno o varios de los campos esta perceptiblemente desalineado con el isocentro, comuniquese con el servicio de mantenimiento. En caso contrario, compruebe la ubicacón de la fiducia y realice la prueba nuevamente."
+            self.resultado = "No pasa"
+            self.mensaje = "Hay desalineación con el isocentro, compruebe ubicación de la fiducia"
+            mensaje = "La prueba excede la tolerancia. Si alguno o varios de los campos está perceptiblemente desalineado con el isocentro, comuniquese con el servicio de mantenimiento. En caso contrario, compruebe la ubicacón de la fiducia y realice la prueba nuevamente."
         else:
+            self.resultado = "Pasa"
+            self.mensaje = "El eje de rotación del colimador coincide con el isocentro."
             mensaje = "El eje de rotación del colimador coincide con el isocentro. La prueba cumple los parámetros de evauación."
 
         return mensaje, self.df
+
+    def generar_pdf(self, nombre_prueba, tolerancia):
+        pdf = PDF2()
+        pdf.add_page()
+
+        pdf.set_font("Times", size=8)
+        pdf.set_margins(10, 60, -1)
+        pdf.set_auto_page_break(True, margin = 40)
+        # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
+        pdf.set_xy(70, 10)
+        pdf.set_font('arial', 'B', 14)
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
+        pdf.set_font('arial', '', 6)
+        pdf.set_xy(160, 10)
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
+        pdf.set_font('arial', 'B', 10)
+        pdf.set_xy(50, 30)
+
+        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
+        pdf.set_xy(10, 40)
+        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
+
+        pdf.set_xy(10, 50)
+        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
+        pdf.set_xy(10, 60)
+
+        pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
+
+        nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
+        pdf.output(nombre_prueba)

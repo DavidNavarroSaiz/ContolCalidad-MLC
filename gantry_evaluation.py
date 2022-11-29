@@ -22,6 +22,9 @@ for name_img in os.listdir(directory):
         df_alineacion, msj_alineacion = prueba.alineacion(mm_px,tolerance_mm)
         df_diferencia_angulos, msj_diff_ang = prueba.comparacion_angulos(tolerance_grados)
         df_cuadratura, msj_cuadratura = prueba.cuadratura(tolerance_grados)
+        prueba.generar_pdf("Alineacion",tolerance_mm) 
+        prueba.generar_pdf("Comparacion",tolerance_grados) 
+        prueba.generar_pdf("Cuadratura",tolerance_grados) 
 
     print(msj_alineacion, '\n', msj_diff_ang, '\n', msj_cuadratura)
 
