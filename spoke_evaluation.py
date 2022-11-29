@@ -2,6 +2,8 @@ from spoke import Spoke
 import pandas as pd
 import datetime
 import os
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 columns = {
     'Image':[],
@@ -24,8 +26,8 @@ for name_img in os.listdir(directory):
         white_circle_coordinates = prueba.find_white_circle(97, 200)      # centro del circulo blanco
         coordinates_list, angles, couples = prueba.find_regions(230, 255) # coordenadas de las lineas oscuras
         intersection_points = prueba.find_intersection(couples)           # puntos de intersección de lineas oscuras
-        
         mensaje, df = prueba.evaluate_error(white_circle_coordinates, intersection_points, tolerance_mm, mmpx)
+        prueba.generar_pdf("SpokeShot",tolerance_mm) 
         # print(mensaje)
 
 df.to_csv(f"./csvs/spoke_{datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')}.csv", mode='a', index=False, header=True)

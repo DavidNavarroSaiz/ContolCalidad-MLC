@@ -2,6 +2,8 @@ from repeatability import CompareImages
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+from reporte import PDF2
+import datetime
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -73,8 +75,42 @@ class RectangleDimensions():
         self.dataframe = self.dataframe.append(new_row_h, ignore_index=True)
 
         if error == 0:
+            self.resultado = "Pasa."
+            self.mensaje = f"La prueba cumple los parámetros de evauación. W={self.w_mm}, H={self.h_mm}"
             message = f"La prueba cumple los parámetros de evauación. W={self.w_mm}, H={self.h_mm}"
         else:
+            self.resultado = "No pasa."
+            self.mensaje = "Compruebe que el campo irradiado coincida con la referencia seleccionada."
             message = "La prueba excede la tolerancia. \n Compruebe que el campo irradiado coincida con la referencia seleccionada, realice la prueba nuevamente; en caso de persistir el error, ejecute la prueba con el método de película radiocrómica."
 
         return self.dataframe, message
+    
+    def generar_pdf(self, nombre_prueba, tolerancia):
+        pdf = PDF2()
+        pdf.add_page()
+
+        pdf.set_font("Times", size=8)
+        pdf.set_margins(10, 60, -1)
+        pdf.set_auto_page_break(True, margin = 40)
+        # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
+        pdf.set_xy(70, 10)
+        pdf.set_font('arial', 'B', 14)
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
+        pdf.set_font('arial', '', 6)
+        pdf.set_xy(160, 10)
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
+        pdf.set_font('arial', 'B', 10)
+        pdf.set_xy(50, 30)
+
+        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
+        pdf.set_xy(10, 40)
+        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
+
+        pdf.set_xy(10, 50)
+        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
+        pdf.set_xy(10, 60)
+
+        pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
+
+        nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
+        pdf.output(nombre_prueba)

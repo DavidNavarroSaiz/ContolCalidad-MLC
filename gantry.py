@@ -3,6 +3,8 @@ from itertools import count
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
+from reporte import PDF2
+import datetime
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 ''' Creación clase para prueba Picket Fence '''
@@ -106,8 +108,12 @@ class AlineacionYCuadratura():
 
 
         if error == 1:
+            self.resultado_alineacion = "No pasa."
+            self.mensaje_alineacion = "Revise angulación en dirección GT y planicidad del EPID."
             mensaje = "\n La prueba excede la tolerancia. Revise: \n 1. El gantry, angulación en direccion GT. \n 2. La planicidad del EPID. \n Puede hacer uso del nivel de burbuja, digitales o semejantes. \n " 
         else:
+            self.resultado_alineacion = "Pasa."
+            self.mensaje_alineacion = "La prueba cumple los parámetros de evaluación. Alineación."
             mensaje = "\n La prueba cumple los parámetros de evaluación. Alineación. \n"
 
         return self.df_alineacion, mensaje      
@@ -127,9 +133,13 @@ class AlineacionYCuadratura():
         error = 1 if (abs(diff) > tolerance_grados) else 0
 
         if error == 1:
+            self.resultado_comparacion = "No pasa."
+            self.mensaje_comparacion = "Los bancos de multilaminas parecen no estar alineados."
             mensaje = "\n La prueba excede la tolerancia. \n Los bancos de multilaminas parecen no estar alineados, repita la prueba; en caso de persistir el error comuniquese con el equipo de mantenimiento. \n"
             new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), 'Resultado':"No pasa"}
         else:
+            self.resultado_comparacion = "Pasa."
+            self.mensaje_comparacion = "La prueba cumple los parámetros de evaluación. Comparación de ángulos entre láminas."
             mensaje = "\n La prueba cumple los parámetros de evaluación. Comparación de ángulos entre láminas. \n"
             new_row = {'Image':self.name_img, 'Diferencia angulos [grados]':(round(diff, 4)), 'Resultado':"Pasa"}
 
@@ -167,11 +177,74 @@ class AlineacionYCuadratura():
             self.df_cuadratura = self.df_cuadratura.append(new_row, ignore_index=True)
 
         if error == 1:
+            self.resultado_cuadratura = "No pasa"
+            self.mensaje_cuadratura = "El colimador secundario y el MLC no parecen estar alineados."
             mensaje = "\n La prueba excede la tolerancia. \n El colimador secundario y el MLC no parecen estar alineados, repita la prueba; en caso de persistir el error comuniquese con el servicio de mantenimiento. \n"
         else:
+            self.resultado_cuadratura = "Pasa"
+            self.mensaje_cuadratura = "La prueba cumple los parámetros de evaluación. Cuadratura."
             mensaje = "\n La prueba cumple los parámetros de evaluación. Cuadratura. \n"
 
         return self.df_cuadratura, mensaje
+
+    def generar_pdf(self, nombre_prueba, tolerancia):
+        pdf = PDF2()
+        pdf.add_page()
+
+        pdf.set_font("Times", size=8)
+        pdf.set_margins(10, 60, -1)
+        pdf.set_auto_page_break(True, margin = 40)
+        # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
+        pdf.set_xy(70, 10)
+        pdf.set_font('arial', 'B', 14)
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
+        pdf.set_font('arial', '', 6)
+        pdf.set_xy(160, 10)
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
+        pdf.set_font('arial', 'B', 10)
+        pdf.set_xy(50, 30)
+
+        if nombre_prueba == "Alineacion":
+            pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
+            pdf.set_xy(10, 40)
+            pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
+
+            pdf.set_xy(10, 50)
+            pdf.cell(40, 10, "Resultado: "+self.resultado_alineacion, 0, 0, 'L')
+            pdf.set_xy(10, 60)
+
+            pdf.cell(40, 10, "Mensaje: "+str(self.mensaje_alineacion), 0, 0, 'L')
+
+            nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
+            pdf.output(nombre_prueba)
+
+        elif nombre_prueba == "Comparacion":
+            pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
+            pdf.set_xy(10, 40)
+            pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ ' grados', 0, 0, 'L')
+
+            pdf.set_xy(10, 50)
+            pdf.cell(40, 10, "Resultado: "+self.resultado_comparacion, 0, 0, 'L')
+            pdf.set_xy(10, 60)
+
+            pdf.cell(40, 10, "Mensaje: "+str(self.mensaje_comparacion), 0, 0, 'L')
+
+            nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
+            pdf.output(nombre_prueba)
+
+        elif nombre_prueba == "Cuadratura":
+            pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
+            pdf.set_xy(10, 40)
+            pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ ' grados', 0, 0, 'L')
+
+            pdf.set_xy(10, 50)
+            pdf.cell(40, 10, "Resultado: "+self.resultado_cuadratura, 0, 0, 'L')
+            pdf.set_xy(10, 60)
+
+            pdf.cell(40, 10, "Mensaje: "+str(self.mensaje_cuadratura), 0, 0, 'L')
+
+            nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
+            pdf.output(nombre_prueba)
 
 '''
 CODIGOS IMPORTANTES PARA PRUEBAS
