@@ -135,11 +135,12 @@ class SheetPosition():
                 dist_der_sub = round(abs(self.square_center - (x_sub+w_sub))*mm_px,2)
 
                 if  (abs(dist_izq_sub- distance)> tolerance or abs(dist_der_sub- distance)> tolerance):
-                    self.mensaje = "  la lamina", lamina_init," excede la tolerancia, con una distancia izquierda: ",dist_izq_sub,"derecha:",dist_der_sub," \n Si la posición de las laminas esta perceptiblemente equivocada comuniquese con el servicio de mantenimiento.\n En caso contrario, compruebe el posicionamiento de las fiducias, realice la prueba nuevamente. "
+                    mensaje = "  la lamina", lamina_init," excede la tolerancia, con una distancia izquierda: ",dist_izq_sub,"derecha:",dist_der_sub," \n Si la posición de las laminas esta perceptiblemente equivocada comuniquese con el servicio de mantenimiento.\n En caso contrario, compruebe el posicionamiento de las fiducias, realice la prueba nuevamente. "
                     error = True
                     self.resultado = ' No pasa'
                 else:
-                    self.mensaje = "\n La posicion de la hoja es precisa, la prueba cumple los parámetros de evauación \n"
+                    self.mensaje = "La posicion de la hoja es precisa"
+                    mensaje = "\n La posicion de la hoja es precisa, la prueba cumple los parámetros de evauación \n"
 
                 self.new_row["distance_izq"]= distance- dist_izq_sub
                 self.new_row["distance_der"]= distance-dist_der_sub
@@ -149,6 +150,10 @@ class SheetPosition():
 
                 self.df = pd.concat([self.df, df_new_row])
                 lamina_init -= 1
+            if error:
+                self.mensaje = "Fallo de precision en el posicionamiento de las laminas "
+            else: 
+                self.mensaje = "Posicionamiento correcto."
         else :
             mensaje = "Fallo encontrando puntos blancos"
 
@@ -160,6 +165,7 @@ class SheetPosition():
 
             self.df = pd.concat([self.df, df_new_row])
             lamina_init -= 1
+
         return self.df,self.mensaje
     def draw_line(self):
         # self.img_line = np.stack((self.imgRoi,)*3, axis=-1)
@@ -172,8 +178,7 @@ class SheetPosition():
         # cv2.waitKey()
 
 
-    def generar_pdf(self,nombre_prueba,tolerancia):
-
+    def generar_pdf(self, nombre_prueba, tolerancia):
         pdf = PDF2()
         pdf.add_page()
 
@@ -183,22 +188,22 @@ class SheetPosition():
         # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
         pdf.set_xy(70, 10)
         pdf.set_font('arial', 'B', 14)
-        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'C')
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
         pdf.set_font('arial', '', 6)
         pdf.set_xy(160, 10)
-        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'C')
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
         pdf.set_font('arial', 'B', 10)
         pdf.set_xy(50, 30)
 
-        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'C')
+        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
         pdf.set_xy(10, 40)
-        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'C')
+        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
 
         pdf.set_xy(10, 50)
-        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'C')
-        pdf.set_xy(50, 60)
+        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
+        pdf.set_xy(10, 60)
 
-        pdf.cell(40, 10, "Mensaje correspondiente : "+str(self.mensaje), 0, 0, 'C')
+        pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
 
         nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
         pdf.output(nombre_prueba)

@@ -27,5 +27,6 @@ for name_img in os.listdir(directory):
         field = FieldCoincidence(path_img,df,name_img)
         field.find_white_circle()  
         df,mensaje = field.evaluate_square_dimensions(distance_white_points,tolerance_white_points,distance_edge,tolerance_edge,mmpx)                    
+        field.generar_pdf("field_coincidence",tolerance_edge)  
         print('resultado image',name_img,' :', mensaje)
 df.to_csv(f"./csvs/field_coincidence_{datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')}.csv", mode='a', index=False, header=True)
