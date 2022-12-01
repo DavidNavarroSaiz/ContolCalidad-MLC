@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import pandas as pd
+from reporte import PDF2
+import datetime
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 ''' Creación clase para prueba Picket Fence '''
@@ -127,24 +129,58 @@ class Picket():
                 if (abs(5-distance_1*mmpx) > tolerance_mm) or (abs(5-distance_2*mmpx) > tolerance_mm) or ((abs(5-distance_1*mmpx)+abs(5-distance_2*mmpx)) > tolerance_mm):
                     error = 1
                     # Para Y1 (de lámina 0 a 20)
-                    new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'No pasa'}
+                    # new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'No pasa'}
                     # Para Y2 (de lámina 21 a 40)
-                    # new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones*2-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'No pasa'}
+                    new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones*2-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'No pasa'}
                 else:
                     # Para Y1
-                    new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'Pasa'}
+                    # new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'Pasa'}
                     # Para Y2
-                    # new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones*2-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'Pasa'}
+                    new_row = {'Image':self.name_img, 'Center value [mm]':(round(x_center*mmpx, 4)), 'Left edge distance [mm]':(round(distance_1*mmpx, 3)), 'Right edge distance [mm]':(round(distance_2*mmpx, 3)), 'Lamina':str(number_of_zones*2-cnt_lamina+1)+"_0"+str(cnt_region), 'Result':'Pasa'}
                 self.df = self.df.append(new_row, ignore_index=True)
                 cnt_lamina += 1
             cnt_region += 1
 
         if error == 1:
+            self.resultado = "No pasa"
+            self.mensaje = "Fallo de posicionamiento de las laminas por Picket Fence."
             mensaje = "Fallo de posicionamiento de las laminas por Picket Fence."
         else:
+            self.resultado = "Pasa"
+            self.mensaje = "Posicionamiento correcto."
             mensaje = "Posicionamiento correcto."
 
         return mensaje, self.df 
+
+    def generar_pdf(self, nombre_prueba, tolerancia):
+        pdf = PDF2()
+        pdf.add_page()
+
+        pdf.set_font("Times", size=8)
+        pdf.set_margins(10, 60, -1)
+        pdf.set_auto_page_break(True, margin = 40)
+        # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
+        pdf.set_xy(70, 10)
+        pdf.set_font('arial', 'B', 14)
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
+        pdf.set_font('arial', '', 6)
+        pdf.set_xy(160, 10)
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
+        pdf.set_font('arial', 'B', 10)
+        pdf.set_xy(50, 30)
+
+        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
+        pdf.set_xy(10, 40)
+        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
+
+        pdf.set_xy(10, 50)
+        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
+        pdf.set_xy(10, 60)
+
+        pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
+
+        nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
+        pdf.output(nombre_prueba)
 
 '''
 CODIGOS PARA PRUEBAS

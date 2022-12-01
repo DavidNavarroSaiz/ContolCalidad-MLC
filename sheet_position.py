@@ -49,16 +49,12 @@ class SheetPosition():
     def find_white_circle(self):
         self.rectangle_roi()
         min_value, max_value, prom_value = self.find_gray_levels(self.gray_img)
-        # print(min_value, max_value, prom_value)
         self.thresh = cv2.inRange(self.img_rectangle, 105, 120)
-        
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        
         self.circle_list = []
         for c in contours:
             a = cv2.contourArea(c)
             if a > 20:
-                
                 p = cv2.arcLength(c,True)
                 ci = p**2/(4*np.pi*a)
                 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -69,7 +65,8 @@ class SheetPosition():
                     cX = int(M["m10"] / M["m00"])
                     cY = int(M["m01"] / M["m00"])
                     self.circle_list.append((cX,cY))
-        # cv2.imshow("imgage",self.img_raw)
+        #             cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 255, 0), 5)
+        # cv2.imshow("imgage",self.img_rectangleRGB)
         # cv2.waitKey()
         if self.circle_list != []:
             self.square_center = int((self.circle_list[0][0]+self.circle_list[1][0])/2)
@@ -130,25 +127,20 @@ class SheetPosition():
                 contours_sub, _ = cv2.findContours(sub_region, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
                 cnt = contours_sub[0]
-                # cv2.drawContours(sub_region_rgb, cnt, -1, (0, 255, 0), 5)
+                cv2.drawContours(sub_region_rgb, cnt, -1, (0, 255, 0), 5)
                 # cv2.imshow("imagecc",sub_region_rgb)
                 # cv2.waitKey()
                 x_sub,y_sub,w_sub,h_sub = cv2.boundingRect(cnt)  # Las variables "x" y "y" son el punto sup izq de la imagen
                 dist_izq_sub = round(abs(self.square_center- x_sub)*mm_px,2)
                 dist_der_sub = round(abs(self.square_center - (x_sub+w_sub))*mm_px,2)
-                print("x_sub",x_sub)
-                print(w_sub)
-                print(self.square_center)
-                print(dist_izq_sub)
-                print(dist_der_sub)
-                print(distance)
-                print(tolerance)
+
                 if  (abs(dist_izq_sub- distance)> tolerance or abs(dist_der_sub- distance)> tolerance):
-                    self.mensaje = "  la lamina", lamina_init," excede la tolerancia, con una distancia izquierda: ",dist_izq_sub,"derecha:",dist_der_sub," \n Si la posición de las laminas esta perceptiblemente equivocada comuniquese con el servicio de mantenimiento.\n En caso contrario, compruebe el posicionamiento de las fiducias, realice la prueba nuevamente. "
+                    mensaje = "  la lamina", lamina_init," excede la tolerancia, con una distancia izquierda: ",dist_izq_sub,"derecha:",dist_der_sub," \n Si la posición de las laminas esta perceptiblemente equivocada comuniquese con el servicio de mantenimiento.\n En caso contrario, compruebe el posicionamiento de las fiducias, realice la prueba nuevamente. "
                     error = True
                     self.resultado = ' No pasa'
                 else:
-                    self.mensaje = "\n La posicion de la hoja es precisa, la prueba cumple los parámetros de evauación \n"
+                    self.mensaje = "La posicion de la hoja es precisa"
+                    mensaje = "\n La posicion de la hoja es precisa, la prueba cumple los parámetros de evauación \n"
 
                 self.new_row["distance_izq"]= distance- dist_izq_sub
                 self.new_row["distance_der"]= distance-dist_der_sub
@@ -158,6 +150,10 @@ class SheetPosition():
 
                 self.df = pd.concat([self.df, df_new_row])
                 lamina_init -= 1
+            if error:
+                self.mensaje = "Fallo de precision en el posicionamiento de las laminas "
+            else: 
+                self.mensaje = "Posicionamiento correcto."
         else :
             mensaje = "Fallo encontrando puntos blancos"
 
@@ -169,6 +165,7 @@ class SheetPosition():
 
             self.df = pd.concat([self.df, df_new_row])
             lamina_init -= 1
+
         return self.df,self.mensaje
     def draw_line(self):
         # self.img_line = np.stack((self.imgRoi,)*3, axis=-1)
@@ -177,11 +174,11 @@ class SheetPosition():
         img2[:,:,1] = self.img_rectangle
         img2[:,:,2] = self.img_rectangle
         cv2.line(img2, (self.circle_list[0][0], self.circle_list[0][1]), (self.circle_list[1][0], self.circle_list[1][1]), (255,0 , 0), thickness=2)
+        # cv2.imshow("img",img2)
+        # cv2.waitKey()
 
 
-
-    def generar_pdf(self,nombre_prueba,tolerancia):
-
+    def generar_pdf(self, nombre_prueba, tolerancia):
         pdf = PDF2()
         pdf.add_page()
 
@@ -191,24 +188,22 @@ class SheetPosition():
         # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
         pdf.set_xy(70, 10)
         pdf.set_font('arial', 'B', 14)
-        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'C')
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
         pdf.set_font('arial', '', 6)
         pdf.set_xy(160, 10)
-        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'C')
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
         pdf.set_font('arial', 'B', 10)
         pdf.set_xy(50, 30)
 
-        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'C')
+        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
         pdf.set_xy(10, 40)
-        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'C')
+        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
 
         pdf.set_xy(10, 50)
-        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'C')
-        pdf.set_xy(50, 60)
+        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
+        pdf.set_xy(10, 60)
 
-        print(len(self.mensaje))
-
-        pdf.cell(40, 10, "Mensaje correspondiente : "+str(self.mensaje), 0, 0, 'C')
+        pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
 
         nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
         pdf.output(nombre_prueba)

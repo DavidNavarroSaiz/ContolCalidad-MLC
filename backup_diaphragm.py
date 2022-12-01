@@ -44,7 +44,8 @@ class BackupDiaphragm():
         self.img_rectangle = self.imgray[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_rectangleRGB = self.img_raw[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_mask = self.mask[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
-        
+        # cv2.imshow("img",self.img_mask)
+        # cv2.waitKey()
     
     def find_white_circle(self):
         """
@@ -55,8 +56,7 @@ class BackupDiaphragm():
         
         
         _, self.thresh = cv2.threshold(self.img_rectangle, 105, 255, cv2.THRESH_BINARY_INV)
-        # cv2.imshow("img",self.thresh)
-        # cv2.waitKey()
+        
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         # self.circle_list = []
         for c in contours:
@@ -67,13 +67,11 @@ class BackupDiaphragm():
                 
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 if ci < 1.22:
-                    # print("CIRCLE")
                     M = cv2.moments(c)
                     cX = int(M["m10"] / M["m00"])
                     cY = int(M["m01"] / M["m00"])
-                    # self.circle_list.append((cX,cY))
                     self.white_center = (cX,cY)
-                    cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 255, 0), 3)
+                    # cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 255, 0), 3)
                     # cv2.imshow("image",self.img_rectangleRGB)
                     # cv2.waitKey()
                 # else :
@@ -115,14 +113,16 @@ class BackupDiaphragm():
                     error = True
                     self.resultado = ' no pasa'
                 else:
-                    self.mensaje = "\n Los diafragmas de respaldo estan en la posicion correcta.  La prueba cumple los parámetros de evauación.  \n La distancia del diafragma X1 es de:",dist_izq,"y La distancia del diafragma X2 es de :",dist_der
+                    self.mensaje = " Los diafragmas de respaldo estan en la posicion correcta"
+                    mensaje = " Los diafragmas de respaldo estan en la posicion correcta.  La prueba cumple los parámetros de evauación.  \n La distancia del diafragma X1 es de:",dist_izq,"y La distancia del diafragma X2 es de :",dist_der
                 
                 new_row = {'Image':self.name_img, 'X1[mm]':distance - dist_izq, 'X2[mm]':distance - dist_der, 'ancho campo irradiado[mm]':ancho_teorico-(dist_izq+dist_der), 'error':error}
                 df_new_row = pd.DataFrame([new_row])
 
                 self.df = pd.concat([self.df, df_new_row])
             else:
-                self.mensaje = "Compruebe que el campo irradiado coincida con la referencia seleccionada, realice la prueba nuevamente; en caso de persistir el error, ejecute la prueba con el método de película radiocrómica. "
+                self.mensaje = "Compruebe que el campo irradiado coincida con la referencia seleccionada "
+                mensaje = "Compruebe que el campo irradiado coincida con la referencia seleccionada, realice la prueba nuevamente; en caso de persistir el error, ejecute la prueba con el método de película radiocrómica. "
                 new_row = {'Image':self.name_img, 'X1[mm]':distance - dist_izq, 'X2[mm]':distance - dist_der, 'ancho campo irradiado[mm]':ancho_teorico-(dist_izq+dist_der), 'error':"compruebe referencia"}
                 df_new_row = pd.DataFrame([new_row])
 
@@ -138,59 +138,33 @@ class BackupDiaphragm():
             self.resultado = ' no pasa'
         return self.df,self.mensaje
 
-    def generar_pdf(self,nombre_prueba,tolerancia):
-                    
+    def generar_pdf(self, nombre_prueba, tolerancia):
         pdf = PDF2()
         pdf.add_page()
-        
+
         pdf.set_font("Times", size=8)
         pdf.set_margins(10, 60, -1)
         pdf.set_auto_page_break(True, margin = 40)
         # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
         pdf.set_xy(70, 10)
         pdf.set_font('arial', 'B', 14)
-        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'C')
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
         pdf.set_font('arial', '', 6)
         pdf.set_xy(160, 10)
-        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'C')
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
         pdf.set_font('arial', 'B', 10)
         pdf.set_xy(50, 30)
-        
-        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'C')
+
+        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
         pdf.set_xy(10, 40)
-        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'C')
+        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
 
         pdf.set_xy(10, 50)
-        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'C')
-        pdf.set_xy(50, 60)
-        pdf.cell(40, 10, "Mensaje correspondiente : "+str(self.mensaje), 0, 0, 'C')
-        # pdf.set_xy(40, 70)
-        # pdf.cell(20, 10, "Edad: "+self.edad, 0, 0, 'L')
-        # pdf.cell(70, 10, "Correo_electronico: "+self.Correo_electronico, 0, 0, 'L')
-        # pdf.cell(50, 10, "Telefono: "+self.Telefono, 0, 1, 'C')
-        # pdf.set_font('arial', 'B', 12)
-        # pdf.set_xy(20, 80)
-        # pdf.cell(20, 20, "Lista de objetivos: ", 0, 1, 'C')
-        # pdf.lista_terapia_objetivos(20,90,df2)
-        # pdf.add_page()
-        # pdf.set_font('arial', 'B', 12)
-        # pdf.set_xy(20, 50)
-        # pdf.cell(100, 30, "Tabla de movimientos", 0, 1, 'C')
-        # pdf.table(df3)
+        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
+        pdf.set_xy(10, 60)
 
-        # pdf.add_page()
-        # pdf.set_font('arial', 'B', 12)
-        # pdf.set_xy(60, 50)
-        # pdf.cell(75, 30, "Grafico Movimiento vs Calificacion", 0, 1, 'C')
-        # pdf.image('./../reportes/images/calificaciones_'+self.comboBox_reporte_usuario.currentText()+'.png',  link='', type='', w=700/4, h=450/4)
-        # pdf.add_page()
-        # pdf.set_font('arial', 'B', 12)
-        # pdf.set_xy(50, 50)
-        # pdf.cell(100, 10, "Analisis calificaciones por objetivo y terapia ", 0, 1, 'L')
-        # pdf.set_xy(10, 70)
-        # pdf.Promedio_objetivo(df5)
-        # pdf.promedio_terapia(df6)
-        
+        pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
+
         nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
         pdf.output(nombre_prueba)
     

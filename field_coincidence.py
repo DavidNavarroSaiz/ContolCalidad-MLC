@@ -7,6 +7,8 @@ import pandas as pd
 from scipy.spatial.distance import euclidean
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+from reporte import PDF2
+import datetime
 class FieldCoincidence():
     """
     Esta clase se utiliza para tal cosa
@@ -48,8 +50,8 @@ class FieldCoincidence():
         self.img_rectangle = self.imgray[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_rectangleRGB = self.img_raw[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
         self.img_mask = self.mask[self.y_rectangle:(self.y_rectangle+self.h_rectange),self.x_rectangle:(self.x_rectangle+self.w_rectangle)]
-        
-
+        # cv2.imshow("img",self.img_mask)
+        # cv2.waitKey()
     def find_white_circle(self):
         """
         Encontrar los puntos blancos en la imagen
@@ -57,8 +59,6 @@ class FieldCoincidence():
         """
         self.rectangle_roi() 
         _, self.thresh = cv2.threshold(self.img_rectangle, 103, 255, cv2.THRESH_BINARY_INV)
-        # cv2.imshow("img",self.thresh)
-        # cv2.waitKey()
         contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         self.circle_list = []
         for c in contours:
@@ -73,8 +73,40 @@ class FieldCoincidence():
                 cX = int(M["m10"] / M["m00"])
                 cY = int(M["m01"] / M["m00"])
                 self.circle_list.append((cX,cY))
-                # cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 0, 255), 1) # dibujar punto blanco encontrado
-                
+        #         cv2.drawContours(self.img_rectangleRGB, c, -1, (0, 255, 0), 3) # dibujar punto blanco encontrado
+        # cv2.imshow("img_rectangleRGB",self.img_rectangleRGB)        
+        # cv2.waitKey()
+
+    def generar_pdf(self, nombre_prueba, tolerancia):
+        pdf = PDF2()
+        pdf.add_page()
+
+        pdf.set_font("Times", size=8)
+        pdf.set_margins(10, 60, -1)
+        pdf.set_auto_page_break(True, margin = 40)
+        # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
+        pdf.set_xy(70, 10)
+        pdf.set_font('arial', 'B', 14)
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
+        pdf.set_font('arial', '', 6)
+        pdf.set_xy(160, 10)
+        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
+        pdf.set_font('arial', 'B', 10)
+        pdf.set_xy(50, 30)
+
+        pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
+        pdf.set_xy(10, 40)
+        pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
+
+        pdf.set_xy(10, 50)
+        pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
+        pdf.set_xy(10, 60)
+
+        pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
+
+        nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'
+        pdf.output(nombre_prueba)
+
     def evaluate_square_dimensions(self,distance_white_points,tolerance_white_points,distance_edge,tolerance_edge,mm_px):
         
         """
@@ -82,7 +114,7 @@ class FieldCoincidence():
         blancos hasta los bordes mas cercanos.
 
         """
-        
+        self.resultado = "Pasa"
         self.find_white_circle()
         contours_mask, _ = cv2.findContours(image=self.img_mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
         x_rectangle_mask,y_rectangle_mask,w_rectangle_mask,h_rectangle_mask = cv2.boundingRect(contours_mask[0])
@@ -140,10 +172,15 @@ class FieldCoincidence():
 
             if error_2 == 1:
                 mensaje = "\n  La dimensión del campo luminoso no es concordante, revise la posición de las fiducias y repita la prueba \n Si el error persiste, ejecute la prueba con el método de hoja milimetrada para verificar la dimensión del campo luminoso.  \n En caso de una apertura de campo luminoso equivocada, comuniquelo al servicio de mantenimiento para corregir la falla. \n " 
+                self.mensaje = "La dimensión del campo luminoso no es concordante"
+                self.resultado = "No pasa"
             elif error_1 == 1:
                 mensaje = "El campo de radiación no coincide con el esperado. Revise que se halla seleccionado e iradiado el campo 12x12. Adquiera una nueva imagen con el campo 12x12."
+                self.mensaje = "El campo de radiación no coincide con el esperado."
+                self.resultado = "No pasa"
             else:
                 mensaje = "\n La prueba cumple los parámetros de evaluación. \n"
+                self.mensaje = "La prueba cumple los parámetros de evaluación. "
 
             new_row = {'Image':self.name_img, 'A-C[mm]':distance_white_points-AC, 'B-D[mm]':distance_white_points- BD,
             'A-B[mm]':distance_white_points-AB,'C-D[mm]':distance_white_points-CD,'A-X1[mm]':distance_edge-A_X1,
@@ -152,12 +189,14 @@ class FieldCoincidence():
             self.df = self.df.append(new_row, ignore_index=True)
         else:
             mensaje = "Error encontrando los puntos blanco"
+            self.mensaje = "Error encontrando los puntos blanco"
             error = True
             new_row = {'Image':self.name_img, 'A-C[mm]':"error", 'B-D[mm]':"error",
             'A-B[mm]':"error",'C-D[mm]':"error",'A-X1[mm]':"error",
             'A-Y1[mm]':"error", 'B-X1[mm]':"error",'B_Y1[mm]':"error",'C-X1[mm]':"error",
             'C-Y1[mm]':"error", 'D-X1[mm]':"error",'D_Y1[mm]':"error",'Error campo de radiacion':"error encontrando los puntos blancos",'Error distacia bordes':"error encontrando los puntos blancos"}
             self.df = self.df.append(new_row, ignore_index=True)
+        print(self.resultado)
         return self.df,mensaje
 
     
