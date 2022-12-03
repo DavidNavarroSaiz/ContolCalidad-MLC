@@ -16,7 +16,7 @@ columns = {
     'ancho campo irradiado[mm]':[],            }
 df = pd.DataFrame(columns)
 
-directory = './IMAGENES FORMATO TIFF/BackupDiafragma/backup_2'
+directory = './Recursos/BackUpDiafragmas'
 for name_img in os.listdir(directory): 
     path_img = os.path.join(directory, name_img)    
     if os.path.isfile(path_img):
