@@ -6,7 +6,7 @@ import datetime
 class PDF2(FPDF):
 
     def header(self):
-        self.image('./IMAGENES FORMATO TIFF/BackupDiafragma/backup_2/Backup1.tif', x = 0, y = 0, w = 210, h = 297)
+        self.image('./resources/reporte_resultados.jpeg', x = 0, y = 0, w = 210, h = 297)
         
 
     def estimate_lines_needed(self, iter, col_width: float) -> int:

@@ -156,27 +156,32 @@ class Picket():
         pdf = PDF2()
         pdf.add_page()
 
+        initial = 80
+        n_line = 10
         pdf.set_font("Times", size=8)
         pdf.set_margins(10, 60, -1)
         pdf.set_auto_page_break(True, margin = 40)
-        # pdf.image('./../GUIs/imagenes_interfaz/formato_reporte.png', x = 0, y = 0, w = 210, h = 297)
-        pdf.set_xy(70, 10)
-        pdf.set_font('arial', 'B', 14)
-        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
-        pdf.set_font('arial', '', 6)
-        pdf.set_xy(160, 10)
-        pdf.cell(40, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss'), 0, 0, 'L')
-        pdf.set_font('arial', 'B', 10)
-        pdf.set_xy(50, 30)
+        pdf.set_xy(160, initial)
+        pdf.set_font('arial', '', 10)
+        pdf.cell(60, 10, "Fecha: "+datetime.datetime.now().strftime('%m-%d-%y %Hh:%Mm'), 0, 0, 'L')
 
+        pdf.set_font('arial', 'B', 14)
+        pdf.set_xy(30, initial)
+        pdf.cell(60, 10, "Responsable: ", 0, 0, 'L')
+
+        pdf.set_font('arial', 'B', 16)
+        pdf.set_xy(70, initial+n_line*2)
+        pdf.cell(75, 10, "Reporte "+nombre_prueba, 0, 1, 'L')
+        pdf.set_font('arial', 'B', 16)
+        pdf.set_xy(10, initial+n_line*3)
         pdf.cell(40, 10, "Imagen: "+self.name_img, 0, 0, 'L')
-        pdf.set_xy(10, 40)
+        pdf.set_font('arial', '', 14)
+        pdf.set_xy(10, initial+n_line*4)
         pdf.cell(40, 10, "Tolerancia: "+str(tolerancia)+ 'mm', 0, 0, 'L')
 
-        pdf.set_xy(10, 50)
+        pdf.set_xy(10, initial+n_line*5)
         pdf.cell(40, 10, "Resultado: "+self.resultado, 0, 0, 'L')
-        pdf.set_xy(10, 60)
-
+        pdf.set_xy(10, initial+n_line*6)
         pdf.cell(40, 10, "Mensaje: "+str(self.mensaje), 0, 0, 'L')
 
         nombre_prueba = './reportes/' + nombre_prueba+self.name_img + datetime.datetime.now().strftime('%m-%d-%y_%Hh-%Mm-%Ss')+'.pdf'

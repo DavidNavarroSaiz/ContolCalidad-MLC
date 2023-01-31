@@ -25,10 +25,10 @@ class CalibrationField():
     def find_contour(self):
         _, max_value, prom_value = self.find_gray_levels(self.gray_img)
         _, self.mask = cv2.threshold(self.gray_img, prom_value, max_value, cv2.THRESH_BINARY_INV)
-        # contours, _ = cv2.findContours(self.thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        # contours, _ = cv2.findContours(self.mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         # self.mask = cv2.inRange( self.gray_img, self.graylevel, 255)
-        # cv2.imshow("d",self.mask)
-        # cv2.waitKey()
+        cv2.imshow("d",self.mask)
+        cv2.waitKey()
         contours, _ = cv2.findContours(image=self.mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE)
         self.c = contours[0]
 
@@ -49,8 +49,8 @@ class CalibrationField():
         relation_mmpx_w = width_mm / w_px
 
         mmpx = (relation_mmpx_h + relation_mmpx_w) / 2
-
-
+        print(w_px)
+        print(h_px)
         return mmpx
 
 '''
