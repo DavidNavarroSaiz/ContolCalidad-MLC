@@ -13,7 +13,7 @@ df_cuadratura = pd.DataFrame(columns_cuadratura)
 mm_px = 0.283
 tolerance_mm, tolerance_grados = 2, 5
 
-directory = './IMAGENES FORMATO TIFF/Gantry/'
+directory = './Recursos/Prueba/' 
 for name_img in os.listdir(directory):
     path_img = os.path.join(directory, name_img)    
     # checking if it is a file

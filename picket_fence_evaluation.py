@@ -21,7 +21,7 @@ mmpx = 0.253
 tolerance_mm = 2
 
 # Se hace evaluación de todas las imagenes en una carpeta
-directory = './IMAGENES FORMATO TIFF/Picket Fence/imagesY2/'
+directory = './Recursos/2_PruebaPicketFence/PF Modificado/'
 for name_img in os.listdir(directory):
     path_img = os.path.join(directory, name_img)    
     # checking if it is a file

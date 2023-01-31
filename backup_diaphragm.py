@@ -20,7 +20,7 @@ class BackupDiaphragm():
         self.white_center = (0,0)
     def find_rectangle_contour(self):
         """
-        Definicion del rectangulo de capo de radiacion
+        Definicion del rectangulo de campo de radiacion
 
         """
         self.imgRoi = self.img[480:542,480:542]
